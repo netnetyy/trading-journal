@@ -1,0 +1,450 @@
+import React, { useState } from 'react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
+import type { AppData } from '../types/trade';
+import {
+  getPortfolioValue,
+  getTotalProfitLoss,
+  getWinRate,
+  getEquityCurve,
+  getPLCurve,
+  formatCurrency,
+  formatPercent,
+  formatDate,
+} from '../utils/calculations';
+import { TrendingUp, TrendingDown, Activity, DollarSign, Percent, Hash, Edit2, Plus, Trash2, X } from 'lucide-react';
+
+interface DashboardProps {
+  data: AppData;
+  onNavigate: (page: 'dashboard' | 'trades' | 'add-trade' | 'statistics' | 'edit-trade', tradeId?: string) => void;
+  onSetPortfolioBase: (value: number) => void;
+  onAddDeposit: (amount: number, date: string, note: string) => void;
+  onDeleteDeposit: (id: string) => void;
+}
+
+const card = (style?: React.CSSProperties): React.CSSProperties => ({
+  backgroundColor: '#1e293b',
+  borderRadius: '12px',
+  border: '1px solid rgba(71,85,105,0.4)',
+  padding: '20px',
+  ...style,
+});
+
+const inputStyle: React.CSSProperties = {
+  backgroundColor: '#0f172a',
+  border: '1px solid rgba(71,85,105,0.5)',
+  borderRadius: '8px',
+  padding: '8px 12px',
+  color: '#e2e8f0',
+  fontSize: '14px',
+  outline: 'none',
+  direction: 'rtl',
+  width: '100%',
+  boxSizing: 'border-box',
+};
+
+export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddDeposit, onDeleteDeposit }: DashboardProps) {
+  const portfolioValue = getPortfolioValue(data);
+  const totalPL = getTotalProfitLoss(data.trades);
+  const winRate = getWinRate(data.trades);
+  const equityCurve = getEquityCurve(data);
+  const plCurve = getPLCurve(data);
+  const recentTrades = [...data.trades]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  // Edit portfolio modal state
+  const [showEditPortfolio, setShowEditPortfolio] = useState(false);
+  const [editPortfolioVal, setEditPortfolioVal] = useState('');
+
+  // Add deposit modal state
+  const [showAddDeposit, setShowAddDeposit] = useState(false);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [depositDate, setDepositDate] = useState(new Date().toISOString().split('T')[0]);
+  const [depositNote, setDepositNote] = useState('');
+  const [confirmDeleteDeposit, setConfirmDeleteDeposit] = useState<string | null>(null);
+
+  const handleSavePortfolio = () => {
+    const val = parseFloat(editPortfolioVal.replace(/,/g, ''));
+    if (!isNaN(val) && val >= 0) {
+      onSetPortfolioBase(val - totalPL); // base = desired total - current PL
+      setShowEditPortfolio(false);
+      setEditPortfolioVal('');
+    }
+  };
+
+  const handleSaveDeposit = () => {
+    const amount = parseFloat(depositAmount.replace(/,/g, ''));
+    if (!isNaN(amount) && amount > 0 && depositDate) {
+      onAddDeposit(amount, depositDate, depositNote);
+      setDepositAmount('');
+      setDepositNote('');
+      setDepositDate(new Date().toISOString().split('T')[0]);
+      setShowAddDeposit(false);
+    }
+  };
+
+  const plColor = totalPL >= 0 ? '#22c55e' : '#ef4444';
+  const plPercent = data.portfolioBaseValue > 0 ? (totalPL / data.portfolioBaseValue) * 100 : 0;
+
+  const statCards = [
+    {
+      title: 'ערך תיק כולל',
+      value: formatCurrency(portfolioValue),
+      icon: DollarSign,
+      color: '#0ea5e9',
+      bg: 'rgba(14,165,233,0.1)',
+      editable: true,
+    },
+    {
+      title: 'רווח/הפסד כולל',
+      value: formatCurrency(totalPL),
+      sub: formatPercent(plPercent) + ' מהבסיס',
+      icon: totalPL >= 0 ? TrendingUp : TrendingDown,
+      color: plColor,
+      bg: totalPL >= 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+    },
+    {
+      title: 'אחוז הצלחה',
+      value: winRate.toFixed(1) + '%',
+      sub: `${data.trades.filter((t) => t.totalProfitLoss > 0).length} מתוך ${data.trades.length}`,
+      icon: Percent,
+      color: winRate >= 50 ? '#22c55e' : '#f59e0b',
+      bg: winRate >= 50 ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+    },
+    {
+      title: 'מספר עסקאות',
+      value: data.trades.length.toString(),
+      sub: `${data.trades.filter((t) => t.type === 'long').length} לונג | ${data.trades.filter((t) => t.type === 'short').length} שורט`,
+      icon: Hash,
+      color: '#a78bfa',
+      bg: 'rgba(167,139,250,0.1)',
+    },
+  ];
+
+  return (
+    <div style={{ padding: '28px', direction: 'rtl' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>דשבורד</h1>
+        <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+          סקירת תיק ההשקעות שלך
+        </p>
+      </div>
+
+      {/* Stat Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        {statCards.map((sc, i) => {
+          const Icon = sc.icon;
+          return (
+            <div key={i} style={card()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>{sc.title}</span>
+                    {sc.editable && (
+                      <button
+                        onClick={() => {
+                          setEditPortfolioVal(portfolioValue.toFixed(2));
+                          setShowEditPortfolio(true);
+                        }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: '#475569', display: 'flex' }}
+                        title="ערוך ערך תיק"
+                      >
+                        <Edit2 size={11} />
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '22px', fontWeight: 700, color: sc.color }}>{sc.value}</div>
+                  {sc.sub && (
+                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{sc.sub}</div>
+                  )}
+                </div>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: sc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Icon size={20} color={sc.color} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Equity Curve — total portfolio value */}
+      <div style={{ ...card(), marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>עקומת הון כוללת</h2>
+            <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>ערך התיק לאורך זמן — כולל הפקדות ורווחים</p>
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#0ea5e9' }}>{formatCurrency(portfolioValue)}</div>
+        </div>
+        {equityCurve.length > 1 ? (
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={equityCurve} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+              <defs>
+                <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.3)" />
+              <XAxis dataKey="date" tickFormatter={(v) => formatDate(v)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => '$' + v.toLocaleString()} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} width={80} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#e2e8f0' }}
+                formatter={(value, _name, props) => [
+                  formatCurrency(Number(value)),
+                  props.payload?.label === 'הפקדה' ? 'הפקדה + עדכון' : 'ערך תיק',
+                ]}
+                labelFormatter={(label) => formatDate(label)}
+              />
+              <Area type="monotone" dataKey="value" stroke="#0ea5e9" strokeWidth={2} fill="url(#equityGrad)" dot={(props) => {
+                if (props.payload?.label === 'הפקדה') {
+                  return <circle key={props.key} cx={props.cx} cy={props.cy} r={5} fill="#fbbf24" stroke="#1e293b" strokeWidth={2} />;
+                }
+                return <circle key={props.key} cx={0} cy={0} r={0} fill="none" />;
+              }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569' }}>
+            <Activity size={40} style={{ opacity: 0.3 }} />
+            <span style={{ marginRight: '12px' }}>אין מספיק נתונים להצגת גרף</span>
+          </div>
+        )}
+        {equityCurve.some((p) => p.label === 'הפקדה') && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#fbbf24' }} />
+            <span style={{ fontSize: '11px', color: '#64748b' }}>נקודה צהובה = הפקדת הון</span>
+          </div>
+        )}
+      </div>
+
+      {/* P&L Curve — trades only */}
+      <div style={{ ...card(), marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>רווח/הפסד מעסקאות</h2>
+            <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>תנועת P&L מצטברת מעסקאות בלבד — ללא הפקדות</p>
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: totalPL >= 0 ? '#22c55e' : '#ef4444' }}>
+            {formatCurrency(totalPL)}
+          </div>
+        </div>
+        {plCurve.length > 1 ? (
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={plCurve} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+              <defs>
+                <linearGradient id="plGradPos" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
+                </linearGradient>
+                <linearGradient id="plGradNeg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.02} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.25} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.3)" />
+              <XAxis dataKey="date" tickFormatter={(v) => formatDate(v)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => (v >= 0 ? '+$' : '-$') + Math.abs(v).toLocaleString()} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
+              <ReferenceLine y={0} stroke="rgba(71,85,105,0.6)" strokeDasharray="4 4" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#e2e8f0' }}
+                formatter={(value) => [formatCurrency(Number(value)), 'P&L מצטבר']}
+                labelFormatter={(label) => formatDate(label)}
+              />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={totalPL >= 0 ? '#22c55e' : '#ef4444'}
+                strokeWidth={2}
+                fill={totalPL >= 0 ? 'url(#plGradPos)' : 'url(#plGradNeg)'}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569' }}>
+            <Activity size={40} style={{ opacity: 0.3 }} />
+            <span style={{ marginRight: '12px' }}>אין מספיק נתונים להצגת גרף</span>
+          </div>
+        )}
+      </div>
+
+      {/* Two columns: Recent Trades + Deposits */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
+
+        {/* Recent Trades */}
+        <div style={card()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>עסקאות אחרונות</h2>
+            <button onClick={() => onNavigate('trades')} style={{ fontSize: '13px', color: '#0ea5e9', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+              הצג הכל
+            </button>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(71,85,105,0.4)' }}>
+                  {['תאריך', 'מניה', 'סוג', 'רווח/הפסד', '%'].map((h) => (
+                    <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 500, textAlign: 'right' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {recentTrades.map((trade) => {
+                  const isProfit = trade.totalProfitLoss >= 0;
+                  return (
+                    <tr
+                      key={trade.id}
+                      style={{ borderBottom: '1px solid rgba(71,85,105,0.2)', backgroundColor: isProfit ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)', cursor: 'pointer' }}
+                      onClick={() => onNavigate('edit-trade', trade.id)}
+                    >
+                      <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{formatDate(trade.date)}</td>
+                      <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 600 }}>{trade.stockName}</td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: trade.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: trade.type === 'long' ? '#22c55e' : '#ef4444' }}>
+                          {trade.type === 'long' ? 'לונג' : 'שורט'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 600 }}>{formatCurrency(trade.totalProfitLoss)}</td>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(trade.totalProfitLossPercent)}</td>
+                    </tr>
+                  );
+                })}
+                {recentTrades.length === 0 && (
+                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#475569' }}>אין עסקאות עדיין</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Deposits Panel */}
+        <div style={card({ display: 'flex', flexDirection: 'column' })}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>הפקדות הון</h2>
+            <button
+              onClick={() => setShowAddDeposit(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '7px', padding: '6px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              <Plus size={13} /> הוסף
+            </button>
+          </div>
+
+          {/* Summary */}
+          <div style={{ backgroundColor: '#0f172a', borderRadius: '8px', padding: '12px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#64748b', fontSize: '13px' }}>סה"כ הופקד</span>
+            <span style={{ color: '#0ea5e9', fontWeight: 700, fontSize: '14px' }}>{formatCurrency(data.portfolioBaseValue)}</span>
+          </div>
+
+          {/* Deposits list */}
+          <div style={{ flex: 1, overflowY: 'auto', maxHeight: '260px' }}>
+            {[...data.deposits].sort((a, b) => b.date.localeCompare(a.date)).map((dep) => (
+              <div key={dep.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(71,85,105,0.2)' }}>
+                <div>
+                  <div style={{ color: '#22c55e', fontWeight: 600, fontSize: '14px' }}>+{formatCurrency(dep.amount)}</div>
+                  <div style={{ color: '#475569', fontSize: '11px', marginTop: '2px' }}>
+                    {formatDate(dep.date)}{dep.note ? ` · ${dep.note}` : ''}
+                  </div>
+                </div>
+                {confirmDeleteDeposit === dep.id ? (
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', color: '#ef4444' }}>למחוק?</span>
+                    <button onClick={() => { onDeleteDeposit(dep.id); setConfirmDeleteDeposit(null); }} style={{ padding: '3px 8px', borderRadius: '4px', border: 'none', backgroundColor: '#ef4444', color: 'white', fontSize: '11px', cursor: 'pointer' }}>כן</button>
+                    <button onClick={() => setConfirmDeleteDeposit(null)} style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(71,85,105,0.5)', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}>לא</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmDeleteDeposit(dep.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', padding: '4px', display: 'flex' }}>
+                    <Trash2 size={13} />
+                  </button>
+                )}
+              </div>
+            ))}
+            {data.deposits.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#475569', fontSize: '13px' }}>אין הפקדות עדיין</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Portfolio Modal */}
+      {showEditPortfolio && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', border: '1px solid rgba(71,85,105,0.5)', padding: '28px', width: '360px', direction: 'rtl' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, color: '#f1f5f9', fontSize: '18px' }}>עריכת ערך התיק</h3>
+              <button onClick={() => setShowEditPortfolio(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+            </div>
+            <p style={{ color: '#64748b', fontSize: '13px', marginTop: 0, marginBottom: '16px' }}>
+              הכנס את ערך התיק הנוכחי כפי שמופיע אצל הברוקר שלך. הבסיס יתעדכן בהתאם.
+            </p>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>ערך תיק כולל ($)</label>
+              <input
+                type="number"
+                value={editPortfolioVal}
+                onChange={(e) => setEditPortfolioVal(e.target.value)}
+                style={inputStyle}
+                placeholder="לדוגמה: 15000"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && handleSavePortfolio()}
+              />
+              <div style={{ fontSize: '12px', color: '#475569', marginTop: '6px' }}>
+                ערך נוכחי: {formatCurrency(portfolioValue)}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleSavePortfolio} style={{ flex: 1, backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+                שמור
+              </button>
+              <button onClick={() => setShowEditPortfolio(false)} style={{ flex: 1, backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', padding: '10px', fontSize: '14px', cursor: 'pointer' }}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Deposit Modal */}
+      {showAddDeposit && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', border: '1px solid rgba(71,85,105,0.5)', padding: '28px', width: '360px', direction: 'rtl' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, color: '#f1f5f9', fontSize: '18px' }}>הוספת הפקדה</h3>
+              <button onClick={() => setShowAddDeposit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>סכום ($)</label>
+                <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} style={inputStyle} placeholder="לדוגמה: 2000" autoFocus />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>תאריך</label>
+                <input type="date" value={depositDate} onChange={(e) => setDepositDate(e.target.value)} style={inputStyle} />
+              </div>
+              <div>
+                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>הערה (אופציונלי)</label>
+                <input type="text" value={depositNote} onChange={(e) => setDepositNote(e.target.value)} style={inputStyle} placeholder="לדוגמה: הפקדה חודשית" onKeyDown={(e) => e.key === 'Enter' && handleSaveDeposit()} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleSaveDeposit} style={{ flex: 1, backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+                הוסף הפקדה
+              </button>
+              <button onClick={() => setShowAddDeposit(false)} style={{ flex: 1, backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', padding: '10px', fontSize: '14px', cursor: 'pointer' }}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Settings, X, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface Purchase {
@@ -193,7 +193,7 @@ export default function LongTermInvestments() {
   const totalPL = totalPortfolioValue - totalPortfolioCost;
   const totalPLPct = totalPortfolioCost > 0 ? (totalPL / totalPortfolioCost) * 100 : 0;
 
-  const inputStyle: React.CSSProperties = {
+  const inputStyle: CSSProperties = {
     width: '100%',
     padding: '8px 12px',
     backgroundColor: 'rgba(30,41,59,0.8)',
@@ -206,7 +206,7 @@ export default function LongTermInvestments() {
     direction: 'rtl',
   };
 
-  const btnPrimary: React.CSSProperties = {
+  const btnPrimary: CSSProperties = {
     padding: '8px 16px',
     backgroundColor: '#0ea5e9',
     color: 'white',
@@ -217,7 +217,7 @@ export default function LongTermInvestments() {
     fontWeight: 600,
   };
 
-  const btnSecondary: React.CSSProperties = {
+  const btnSecondary: CSSProperties = {
     padding: '8px 16px',
     backgroundColor: 'rgba(71,85,105,0.3)',
     color: '#94a3b8',

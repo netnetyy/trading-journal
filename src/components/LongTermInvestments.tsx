@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Settings, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { supabase } from '../utils/supabase';
 
 interface Purchase {
   id: string;
@@ -18,24 +19,44 @@ interface Investment {
   lastPriceUpdate?: string;
 }
 
-const STORAGE_KEY = 'longterm_investments';
+const LOCAL_KEY = 'longterm_investments';
 const API_KEY_STORAGE = 'finnhub_api_key';
+const SUPABASE_ROW_ID = 2; // row 1 = trading journal, row 2 = long-term investments
 
 function generateId() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return crypto.randomUUID();
 }
 
-function loadInvestments(): Investment[] {
+function loadFromLocal(): Investment[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(LOCAL_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function saveInvestments(investments: Investment[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(investments));
+async function loadInvestments(): Promise<Investment[]> {
+  try {
+    const { data, error } = await supabase
+      .from('app_state')
+      .select('data')
+      .eq('id', SUPABASE_ROW_ID)
+      .single();
+    if (!error && data?.data && Array.isArray(data.data)) {
+      return data.data as Investment[];
+    }
+  } catch { /* fall through */ }
+  return loadFromLocal();
+}
+
+async function saveInvestments(investments: Investment[]): Promise<void> {
+  try {
+    await supabase
+      .from('app_state')
+      .upsert({ id: SUPABASE_ROW_ID, data: investments, updated_at: new Date().toISOString() });
+  } catch { /* fall through */ }
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(investments));
 }
 
 function calcStats(investment: Investment) {
@@ -68,7 +89,8 @@ async function fetchPrice(symbol: string, apiKey: string): Promise<number | null
 }
 
 export default function LongTermInvestments() {
-  const [investments, setInvestments] = useState<Investment[]>(loadInvestments);
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem(API_KEY_STORAGE) ?? '');
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -97,14 +119,22 @@ export default function LongTermInvestments() {
     saveInvestments(updated);
   }, []);
 
+  // Load from Supabase on mount
+  useEffect(() => {
+    loadInvestments().then((data) => {
+      setInvestments(data);
+      setLoading(false);
+    });
+  }, []);
+
   // Auto-refresh prices on load if stale
   useEffect(() => {
-    if (!apiKey) return;
+    if (loading || !apiKey) return;
     const stale = investments.filter((inv) => isOlderThan24h(inv.lastPriceUpdate));
     if (stale.length === 0) return;
     refreshPrices(stale.map((i) => i.id), false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loading]);
 
   async function refreshPrices(ids?: string[], showMsg = true) {
     if (!apiKey) {
@@ -183,6 +213,14 @@ export default function LongTermInvestments() {
   function handleDeleteInvestment(id: string) {
     if (!confirm('למחוק את ההשקעה הזו לגמרי?')) return;
     persist(investments.filter((i) => i.id !== id));
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#475569' }}>
+        טוען...
+      </div>
+    );
   }
 
   const totalPortfolioValue = investments.reduce((s, inv) => {

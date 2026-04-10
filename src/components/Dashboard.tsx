@@ -125,8 +125,8 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       value: data.trades.length.toString(),
       sub: `${data.trades.filter((t) => t.type === 'long').length} לונג | ${data.trades.filter((t) => t.type === 'short').length} שורט`,
       icon: Hash,
-      color: '#a78bfa',
-      bg: 'rgba(167,139,250,0.1)',
+      color: '#facc15',
+      bg: 'rgba(250,204,21,0.1)',
     },
   ];
 

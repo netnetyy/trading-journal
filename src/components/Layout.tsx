@@ -1,7 +1,7 @@
 import React from 'react';
-import { BarChart2, List, Plus, TrendingUp, BookOpen } from 'lucide-react';
+import { BarChart2, List, Plus, TrendingUp, BookOpen, LineChart } from 'lucide-react';
 
-type Page = 'dashboard' | 'trades' | 'add-trade' | 'statistics';
+type Page = 'dashboard' | 'trades' | 'add-trade' | 'statistics' | 'longterm';
 
 interface LayoutProps {
   currentPage: Page;
@@ -14,6 +14,7 @@ const navItems = [
   { id: 'trades' as Page, label: 'יומן עסקאות', icon: List },
   { id: 'add-trade' as Page, label: 'עסקה חדשה', icon: Plus },
   { id: 'statistics' as Page, label: 'סטטיסטיקות', icon: BarChart2 },
+  { id: 'longterm' as Page, label: 'השקעות ארוכות טווח', icon: LineChart },
 ];
 
 export default function Layout({ currentPage, onNavigate, children }: LayoutProps) {

@@ -6,10 +6,11 @@ import TradeLog from './components/TradeLog';
 import TradeForm from './components/TradeForm';
 import Statistics from './components/Statistics';
 import TradeDetail from './components/TradeDetail';
+import LongTermInvestments from './components/LongTermInvestments';
 import type { AppData, Trade, PortfolioDeposit } from './types/trade';
 import { loadData, saveData, generateId } from './utils/storage';
 
-type Page = 'dashboard' | 'trades' | 'add-trade' | 'statistics' | 'edit-trade' | 'trade-detail';
+type Page = 'dashboard' | 'trades' | 'add-trade' | 'statistics' | 'edit-trade' | 'trade-detail' | 'longterm';
 
 function App() {
   const [data, setData] = useState<AppData | null>(null);
@@ -143,6 +144,8 @@ function App() {
         );
       case 'statistics':
         return <Statistics trades={data.trades} onView={(id) => navigate('trade-detail', id)} />;
+      case 'longterm':
+        return <LongTermInvestments />;
       default:
         return (
           <Dashboard
@@ -157,8 +160,8 @@ function App() {
   };
 
   // Map edit-trade to 'trades' for nav highlight
-  const navPage: 'dashboard' | 'trades' | 'add-trade' | 'statistics' =
-    page === 'edit-trade' || page === 'trade-detail' ? 'trades' : page === 'add-trade' ? 'add-trade' : (page as 'dashboard' | 'trades' | 'statistics');
+  const navPage: 'dashboard' | 'trades' | 'add-trade' | 'statistics' | 'longterm' =
+    page === 'edit-trade' || page === 'trade-detail' ? 'trades' : (page as 'dashboard' | 'trades' | 'add-trade' | 'statistics' | 'longterm');
 
   return (
     <Layout currentPage={navPage} onNavigate={(p) => navigate(p)}>

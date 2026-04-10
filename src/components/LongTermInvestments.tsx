@@ -261,7 +261,7 @@ export default function LongTermInvestments() {
         <div style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '12px', padding: '16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <span style={{ color: '#f59e0b', fontWeight: 600 }}>נדרש API Key מ-Finnhub</span>
-            <span style={{ color: '#94a3b8', fontSize: '13px', marginRright: '8px' }}> — לצורך עדכון מחירי מניות אוטומטי</span>
+            <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '8px' }}> — לצורך עדכון מחירי מניות אוטומטי</span>
           </div>
           <button onClick={() => setShowApiSettings(true)} style={{ ...btnPrimary, backgroundColor: '#f59e0b' }}>הגדר עכשיו</button>
         </div>

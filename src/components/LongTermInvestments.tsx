@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Settings, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase } from '../utils/supabase';
 
 interface Purchase {
@@ -67,6 +68,36 @@ function calcStats(investment: Investment) {
   const pl = investment.currentPrice ? currentValue - totalCost : null;
   const plPct = investment.currentPrice && totalCost > 0 ? ((currentValue - totalCost) / totalCost) * 100 : null;
   return { totalShares, totalCost, avgEntry, currentValue, pl, plPct };
+}
+
+function getSymbolColor(inv: Investment, allInvestments: Investment[]): { bg: string; glow: string } {
+  const { plPct } = calcStats(inv);
+  if (plPct === null) return { bg: 'linear-gradient(135deg, #334155, #1e293b)', glow: 'none' };
+
+  const allPcts = allInvestments.map((i) => calcStats(i).plPct).filter((p): p is number => p !== null);
+  const profits = allPcts.filter((p) => p > 0);
+  const losses = allPcts.filter((p) => p < 0);
+
+  if (plPct > 0) {
+    const min = profits.length > 1 ? Math.min(...profits) : plPct;
+    const max = profits.length > 1 ? Math.max(...profits) : plPct;
+    const ratio = max === min ? 0.5 : (plPct - min) / (max - min);
+    const L = Math.round(22 + ratio * 43); // 22% (dark) → 65% (light)
+    return {
+      bg: `linear-gradient(135deg, hsl(142,62%,${L}%), hsl(142,62%,${Math.max(L - 10, 14)}%))`,
+      glow: `0 0 14px hsla(142,62%,${L}%,0.45)`,
+    };
+  } else if (plPct < 0) {
+    const min = losses.length > 1 ? Math.min(...losses) : plPct; // most negative
+    const max = losses.length > 1 ? Math.max(...losses) : plPct; // closest to 0
+    const ratio = max === min ? 0.5 : (plPct - max) / (min - max); // 0 = small loss, 1 = big loss
+    const L = Math.round(22 + ratio * 38); // 22% (dark, small loss) → 60% (light, big loss)
+    return {
+      bg: `linear-gradient(135deg, hsl(0,68%,${L}%), hsl(0,68%,${Math.max(L - 8, 14)}%))`,
+      glow: `0 0 14px hsla(0,68%,${L}%,0.45)`,
+    };
+  }
+  return { bg: 'linear-gradient(135deg, #475569, #334155)', glow: 'none' };
 }
 
 function isOlderThan24h(dateStr?: string) {
@@ -322,6 +353,33 @@ export default function LongTermInvestments() {
         </div>
       )}
 
+      {/* Chart */}
+      {investments.some((inv) => inv.currentPrice != null) && (
+        <div style={{ backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginBottom: '16px' }}>עלות מול שווי נוכחי לפי מניה</div>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={investments.filter((inv) => inv.currentPrice != null).map((inv) => {
+              const { totalCost, currentValue } = calcStats(inv);
+              return { symbol: inv.symbol, עלות: +totalCost.toFixed(2), 'שווי נוכחי': +currentValue.toFixed(2) };
+            })} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+              <XAxis dataKey="symbol" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v as number).toLocaleString('en')}`} />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}
+                formatter={(value: number) => [`$${value.toLocaleString('en', { minimumFractionDigits: 2 })}`, undefined]}
+              />
+              <Bar dataKey="עלות" fill="rgba(71,85,105,0.6)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="שווי נוכחי" radius={[4, 4, 0, 0]}>
+                {investments.filter((inv) => inv.currentPrice != null).map((inv) => {
+                  const { pl } = calcStats(inv);
+                  return <Cell key={inv.id} fill={pl !== null && pl >= 0 ? '#22c55e' : '#ef4444'} />;
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
       {/* Investments list */}
       {investments.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 20px', color: '#475569' }}>
@@ -335,13 +393,14 @@ export default function LongTermInvestments() {
             const { totalShares, totalCost, avgEntry, currentValue, pl, plPct } = calcStats(inv);
             const isExpanded = expandedId === inv.id;
             const hasPrice = inv.currentPrice != null;
+            const { bg: symbolBg, glow: symbolGlow } = getSymbolColor(inv, investments);
 
             return (
               <div key={inv.id} style={{ backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '12px', overflow: 'hidden' }}>
                 {/* Investment header row */}
                 <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
                   {/* Symbol badge */}
-                  <div style={{ width: '52px', height: '52px', borderRadius: '12px', background: 'linear-gradient(135deg, #0ea5e9, #0369a1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '52px', height: '52px', borderRadius: '12px', background: symbolBg, boxShadow: symbolGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.5s, box-shadow 0.5s' }}>
                     <span style={{ color: 'white', fontWeight: 700, fontSize: '12px' }}>{inv.symbol}</span>
                   </div>
 

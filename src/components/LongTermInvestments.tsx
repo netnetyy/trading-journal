@@ -366,7 +366,7 @@ export default function LongTermInvestments() {
               <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v as number).toLocaleString('en')}`} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}
-                formatter={(value: number) => [`$${value.toLocaleString('en', { minimumFractionDigits: 2 })}`, undefined]}
+                formatter={(value) => [`$${Number(value).toLocaleString('en', { minimumFractionDigits: 2 })}`, undefined]}
               />
               <Bar dataKey="עלות" fill="rgba(71,85,105,0.6)" radius={[4, 4, 0, 0]} />
               <Bar dataKey="שווי נוכחי" radius={[4, 4, 0, 0]}>

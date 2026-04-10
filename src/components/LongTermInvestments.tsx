@@ -431,7 +431,7 @@ export default function LongTermInvestments() {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}
                   formatter={(value) => [`$${Number(value).toLocaleString('en', { minimumFractionDigits: 2 })}`, undefined]}
-                  labelFormatter={(label: string) => new Date(label).toLocaleDateString('he-IL')}
+                  labelFormatter={(label) => new Date(String(label)).toLocaleDateString('he-IL')}
                 />
                 <Legend wrapperStyle={{ color: '#94a3b8', fontSize: '13px' }} />
                 <Line type="monotone" dataKey="עלות מצטברת" stroke="#64748b" strokeWidth={2} dot={false} strokeDasharray="4 3" />

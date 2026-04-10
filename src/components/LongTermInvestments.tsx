@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Settings, X, TrendingUp, TrendingDown } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 import { supabase } from '../utils/supabase';
 
 interface Purchase {
@@ -20,44 +20,58 @@ interface Investment {
   lastPriceUpdate?: string;
 }
 
+interface ValueSnapshot {
+  date: string;  // YYYY-MM-DD
+  value: number; // total portfolio value at that date
+}
+
+interface StoredData {
+  investments: Investment[];
+  snapshots: ValueSnapshot[];
+}
+
 const LOCAL_KEY = 'longterm_investments';
 const API_KEY_STORAGE = 'finnhub_api_key';
-const SUPABASE_ROW_ID = 2; // row 1 = trading journal, row 2 = long-term investments
+const SUPABASE_ROW_ID = 2;
 
 function generateId() {
   return crypto.randomUUID();
 }
 
-function loadFromLocal(): Investment[] {
+function parseStored(raw: unknown): StoredData {
+  if (Array.isArray(raw)) return { investments: raw as Investment[], snapshots: [] };
+  if (raw && typeof raw === 'object' && 'investments' in raw) return raw as StoredData;
+  return { investments: [], snapshots: [] };
+}
+
+function loadFromLocal(): StoredData {
   try {
     const raw = localStorage.getItem(LOCAL_KEY);
-    return raw ? JSON.parse(raw) : [];
+    return raw ? parseStored(JSON.parse(raw)) : { investments: [], snapshots: [] };
   } catch {
-    return [];
+    return { investments: [], snapshots: [] };
   }
 }
 
-async function loadInvestments(): Promise<Investment[]> {
+async function loadData(): Promise<StoredData> {
   try {
     const { data, error } = await supabase
       .from('app_state')
       .select('data')
       .eq('id', SUPABASE_ROW_ID)
       .single();
-    if (!error && data?.data && Array.isArray(data.data)) {
-      return data.data as Investment[];
-    }
+    if (!error && data?.data) return parseStored(data.data);
   } catch { /* fall through */ }
   return loadFromLocal();
 }
 
-async function saveInvestments(investments: Investment[]): Promise<void> {
+async function saveData(stored: StoredData): Promise<void> {
   try {
     await supabase
       .from('app_state')
-      .upsert({ id: SUPABASE_ROW_ID, data: investments, updated_at: new Date().toISOString() });
+      .upsert({ id: SUPABASE_ROW_ID, data: stored, updated_at: new Date().toISOString() });
   } catch { /* fall through */ }
-  localStorage.setItem(LOCAL_KEY, JSON.stringify(investments));
+  localStorage.setItem(LOCAL_KEY, JSON.stringify(stored));
 }
 
 function calcStats(investment: Investment) {
@@ -121,6 +135,7 @@ async function fetchPrice(symbol: string, apiKey: string): Promise<number | null
 
 export default function LongTermInvestments() {
   const [investments, setInvestments] = useState<Investment[]>([]);
+  const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem(API_KEY_STORAGE) ?? '');
   const [showApiSettings, setShowApiSettings] = useState(false);
@@ -145,15 +160,18 @@ export default function LongTermInvestments() {
   const [pPrice, setPPrice] = useState('');
   const [pNotes, setPNotes] = useState('');
 
-  const persist = useCallback((updated: Investment[]) => {
-    setInvestments(updated);
-    saveInvestments(updated);
-  }, []);
+  const persist = useCallback((updatedInvestments: Investment[], updatedSnapshots?: ValueSnapshot[]) => {
+    setInvestments(updatedInvestments);
+    const snaps = updatedSnapshots ?? snapshots;
+    if (updatedSnapshots) setSnapshots(updatedSnapshots);
+    saveData({ investments: updatedInvestments, snapshots: snaps });
+  }, [snapshots]);
 
   // Load from Supabase on mount
   useEffect(() => {
-    loadInvestments().then((data) => {
-      setInvestments(data);
+    loadData().then((stored) => {
+      setInvestments(stored.investments);
+      setSnapshots(stored.snapshots);
       setLoading(false);
     });
   }, []);
@@ -184,7 +202,18 @@ export default function LongTermInvestments() {
         updated[idx] = { ...updated[idx], currentPrice: price, lastPriceUpdate: new Date().toISOString() };
       }
     }
-    persist(updated);
+    // Save portfolio value snapshot (one per day)
+    const today = new Date().toISOString().slice(0, 10);
+    const totalValue = updated.reduce((s, inv) => {
+      const shares = inv.purchases.reduce((a, p) => a + p.shares, 0);
+      return s + shares * (inv.currentPrice ?? 0);
+    }, 0);
+    const updatedSnapshots = [
+      ...snapshots.filter((s) => s.date !== today),
+      { date: today, value: +totalValue.toFixed(2) },
+    ].sort((a, b) => a.date.localeCompare(b.date));
+
+    persist(updated, updatedSnapshots);
     setRefreshing(false);
     if (showMsg) {
       setRefreshMsg('המחירים עודכנו!');
@@ -354,31 +383,64 @@ export default function LongTermInvestments() {
       )}
 
       {/* Chart */}
-      {investments.some((inv) => inv.currentPrice != null) && (
-        <div style={{ backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginBottom: '16px' }}>עלות מול שווי נוכחי לפי מניה</div>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={investments.filter((inv) => inv.currentPrice != null).map((inv) => {
-              const { totalCost, currentValue } = calcStats(inv);
-              return { symbol: inv.symbol, עלות: +totalCost.toFixed(2), 'שווי נוכחי': +currentValue.toFixed(2) };
-            })} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-              <XAxis dataKey="symbol" tick={{ fill: '#94a3b8', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v as number).toLocaleString('en')}`} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}
-                formatter={(value) => [`$${Number(value).toLocaleString('en', { minimumFractionDigits: 2 })}`, undefined]}
-              />
-              <Bar dataKey="עלות" fill="rgba(71,85,105,0.6)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="שווי נוכחי" radius={[4, 4, 0, 0]}>
-                {investments.filter((inv) => inv.currentPrice != null).map((inv) => {
-                  const { pl } = calcStats(inv);
-                  return <Cell key={inv.id} fill={pl !== null && pl >= 0 ? '#22c55e' : '#ef4444'} />;
-                })}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
+      {investments.length > 0 && (() => {
+        // Build cumulative cost line from purchase dates
+        const allPurchases = investments.flatMap((inv) =>
+          inv.purchases.map((p) => ({ date: p.date, cost: p.shares * p.pricePerShare }))
+        ).sort((a, b) => a.date.localeCompare(b.date));
+
+        let cumCost = 0;
+        const costByDate: Record<string, number> = {};
+        for (const p of allPurchases) {
+          cumCost += p.cost;
+          costByDate[p.date] = +cumCost.toFixed(2);
+        }
+
+        // Merge all dates from cost points + snapshots
+        const allDates = Array.from(new Set([
+          ...Object.keys(costByDate),
+          ...snapshots.map((s) => s.date),
+        ])).sort();
+
+        let lastCost = 0;
+        const chartData = allDates.map((date) => {
+          if (costByDate[date] !== undefined) lastCost = costByDate[date];
+          const snap = snapshots.find((s) => s.date === date);
+          return {
+            date,
+            'עלות מצטברת': lastCost,
+            'שווי תיק': snap ? snap.value : undefined,
+          };
+        });
+
+        if (chartData.length < 1) return null;
+
+        return (
+          <div style={{ backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>שווי התיק לאורך זמן</div>
+            <div style={{ fontSize: '12px', color: '#475569', marginBottom: '16px' }}>
+              {snapshots.length === 0 ? 'לחץ "עדכן מחירים" כדי להתחיל לצבור נקודות שווי' : `${snapshots.length} נקודות שווי נצברו`}
+            </div>
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={chartData} margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.2)" />
+                <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false}
+                  tickFormatter={(d: string) => new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit' })} />
+                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false}
+                  tickFormatter={(v: number) => `$${v.toLocaleString('en')}`} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}
+                  formatter={(value) => [`$${Number(value).toLocaleString('en', { minimumFractionDigits: 2 })}`, undefined]}
+                  labelFormatter={(label: string) => new Date(label).toLocaleDateString('he-IL')}
+                />
+                <Legend wrapperStyle={{ color: '#94a3b8', fontSize: '13px' }} />
+                <Line type="monotone" dataKey="עלות מצטברת" stroke="#64748b" strokeWidth={2} dot={false} strokeDasharray="4 3" />
+                <Line type="monotone" dataKey="שווי תיק" stroke="#0ea5e9" strokeWidth={2.5} dot={{ fill: '#0ea5e9', r: 4 }} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        );
+      })()}
 
       {/* Investments list */}
       {investments.length === 0 ? (

@@ -156,11 +156,11 @@ function migrate(parsed: AppData): AppData {
   if (parsed.riskUnitValue === undefined) parsed.riskUnitValue = 100;
   if (parsed.trades) {
     parsed.trades = parsed.trades.map(t => ({
-      commissions: (t.reinforcements?.length ?? 0) * 2.5 * 2 + 5,
-      entryReason: '',
-      exitReason: '',
-      conclusions: '',
       ...t,
+      commissions: t.commissions ?? ((1 + (t.reinforcements?.length ?? 0) + (t.exits?.length ?? 0)) * 2.5),
+      entryReason: t.entryReason ?? '',
+      exitReason: t.exitReason ?? '',
+      conclusions: t.conclusions ?? '',
     }));
   }
   return parsed;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Trade, TradeEntry, TradeExit } from '../types/trade';
 import { generateId } from '../utils/storage';
-import { calculateAvgEntryPrice, formatCurrency, getNetProfitLoss } from '../utils/calculations';
+import { calculateAvgEntryPrice, formatCurrency } from '../utils/calculations';
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface TradeFormProps {

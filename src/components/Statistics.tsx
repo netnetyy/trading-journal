@@ -19,7 +19,7 @@ import {
   getMonthlyStats,
   getYearlyStats,
 } from '../utils/calculations';
-import { Award, AlertTriangle, Calendar, TrendingUp } from 'lucide-react';
+import { Award, AlertTriangle, Calendar } from 'lucide-react';
 
 interface StatisticsProps {
   data: AppData;

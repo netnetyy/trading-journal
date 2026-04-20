@@ -378,7 +378,7 @@ function PeriodDetailView({ data, period, onBack, onView }: PeriodDetailViewProp
                 tickFormatter={(v) => '$' + Math.round(v).toLocaleString()} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#e2e8f0' }}
-                formatter={(v: number) => [formatCurrency(v), 'ערך תיק']}
+                formatter={(v) => [typeof v === 'number' ? formatCurrency(v) : '—', 'ערך תיק']}
               />
               <ReferenceLine y={portfolioAtStart} stroke="rgba(71,85,105,0.4)" strokeDasharray="4 4" />
               <Line type="monotone" dataKey="value" stroke={isProfit ? '#22c55e' : '#ef4444'} strokeWidth={2} dot={{ r: 4, fill: isProfit ? '#22c55e' : '#ef4444' }} />

@@ -1,24 +1,40 @@
 import type { Trade } from '../types/trade';
-import { formatCurrency, formatPercent, formatDate } from '../utils/calculations';
+import { formatCurrency, formatPercent, formatDate, getNetProfitLoss, getRiskUnits } from '../utils/calculations';
 import { ArrowRight, Edit2, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface TradeDetailProps {
   trade: Trade;
+  riskUnitValue: number;
   onBack: () => void;
   onEdit: (id: string) => void;
 }
 
 const BEHAVIORAL_LABELS: Record<string, { label: string; color: string }> = {
   'good-trade': { label: 'עסקה טובה', color: '#22c55e' },
-  FOMO: { label: 'FOMO', color: '#e879f9' },
-  'early-entry': { label: 'כניסה מוקדמת', color: '#e879f9' },
-  'poor-management': { label: 'ניהול לקוי', color: '#e879f9' },
-  'no-plan': { label: 'אין תוכנית', color: '#e879f9' },
-  mistake: { label: 'עסקה בטעות', color: '#e879f9' },
-  'no-follow': { label: 'לא עקבתי', color: '#e879f9' },
+  'self-analysis': { label: 'ניתוח עצמי', color: '#3b82f6' },
   'by-raz': { label: 'לפי רז', color: '#a78bfa' },
   'by-niv': { label: 'לפי ניב', color: '#fbbf24' },
-  'self-analysis': { label: 'ניתוח עצמי', color: '#3b82f6' },
+  FOMO: { label: 'FOMO', color: '#f43f5e' },
+  'movement-entry': { label: 'כניסה בתנועה', color: '#f43f5e' },
+  'low-confidence': { label: 'כניסה עם ביטחון נמוך', color: '#f43f5e' },
+  'early-entry': { label: 'כניסה מוקדמת', color: '#f43f5e' },
+  'adding-before-confirmation': { label: 'הוספה לפני אישור', color: '#f43f5e' },
+  'unexecuted-limit': { label: 'לימיט שלא בוצע', color: '#f43f5e' },
+  'early-exit': { label: 'יציאה מוקדמת', color: '#f43f5e' },
+  'late-exit': { label: 'יציאה מאוחרת', color: '#f43f5e' },
+  'risk-unit-deviation': { label: 'חריגה מיחידת סיכון', color: '#f43f5e' },
+  'missed-key-points': { label: 'פספוס נקודות מפתח', color: '#f43f5e' },
+  'profit-to-loss': { label: 'המרת רווח להפסד', color: '#f43f5e' },
+  'trade-infatuation': { label: 'התאהבות בעסקה', color: '#f43f5e' },
+  'work-after-exit': { label: 'עבודה אחרי יציאה', color: '#f43f5e' },
+  'stock-based-management': { label: 'ניהול על בסיס המניה', color: '#f43f5e' },
+  'wrong-goal-planning': { label: 'תכנון מטרה שגוי', color: '#f43f5e' },
+  'tight-stop-loss': { label: 'סטופ לוס צמוד', color: '#f43f5e' },
+  'wrong-share-quantity': { label: 'כמות מניות שגויה', color: '#f43f5e' },
+  'poor-management': { label: 'ניהול לקוי', color: '#f43f5e' },
+  'no-plan': { label: 'אין תוכנית', color: '#f43f5e' },
+  mistake: { label: 'עסקה בטעות', color: '#f43f5e' },
+  'no-follow': { label: 'לא עקבתי', color: '#f43f5e' },
 };
 
 const card = (extra?: React.CSSProperties): React.CSSProperties => ({
@@ -29,12 +45,15 @@ const card = (extra?: React.CSSProperties): React.CSSProperties => ({
   ...extra,
 });
 
-const label: React.CSSProperties = { fontSize: '11px', color: '#475569', marginBottom: '4px' };
-const value: React.CSSProperties = { fontSize: '15px', fontWeight: 600, color: '#e2e8f0' };
+const labelStyle: React.CSSProperties = { fontSize: '11px', color: '#475569', marginBottom: '4px' };
+const valueStyle: React.CSSProperties = { fontSize: '15px', fontWeight: 600, color: '#e2e8f0' };
 
-export default function TradeDetail({ trade, onBack, onEdit }: TradeDetailProps) {
-  const isProfit = trade.totalProfitLoss >= 0;
+export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: TradeDetailProps) {
+  const netPL = getNetProfitLoss(trade);
+  const riskUnits = getRiskUnits(trade, riskUnitValue);
+  const isProfit = netPL >= 0;
   const plColor = isProfit ? '#22c55e' : '#ef4444';
+  const commissions = trade.commissions ?? 0;
 
   return (
     <div style={{ padding: '28px', direction: 'rtl', maxWidth: '860px' }}>
@@ -84,14 +103,20 @@ export default function TradeDetail({ trade, onBack, onEdit }: TradeDetailProps)
             {isProfit ? <TrendingUp size={20} color="#22c55e" /> : <TrendingDown size={20} color="#ef4444" />}
           </div>
           <div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>סה"כ רווח/הפסד</div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: plColor }}>{formatCurrency(trade.totalProfitLoss)}</div>
+            <div style={{ fontSize: '11px', color: '#64748b' }}>רווח/הפסד נטו</div>
+            <div style={{ fontSize: '26px', fontWeight: 800, color: plColor }}>{formatCurrency(netPL)}</div>
+            {commissions > 0 && (
+              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                גולמי: {formatCurrency(trade.totalProfitLoss)} | עמלות: {formatCurrency(commissions)}
+              </div>
+            )}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '28px' }}>
+        <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
           {[
             { label: '% מהעסקה', val: formatPercent(trade.totalProfitLossPercent), color: plColor },
             { label: 'R/R', val: trade.rr.toFixed(2), color: trade.rr >= 1 ? '#22c55e' : trade.rr >= 0 ? '#f59e0b' : '#ef4444' },
+            ...(riskUnitValue > 0 ? [{ label: 'יחידות סיכון', val: (riskUnits >= 0 ? '+' : '') + riskUnits.toFixed(2) + 'R', color: riskUnits >= 0 ? '#22c55e' : '#ef4444' }] : []),
             { label: 'כניסה ממוצעת', val: formatCurrency(trade.avgEntryPrice), color: '#e2e8f0' },
             { label: 'סה"כ מניות', val: trade.totalShares.toLocaleString(), color: '#e2e8f0' },
             { label: 'סה"כ השקעה', val: formatCurrency(trade.totalInvested), color: '#e2e8f0' },
@@ -110,12 +135,12 @@ export default function TradeDetail({ trade, onBack, onEdit }: TradeDetailProps)
         <div style={card()}>
           <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>כניסה ראשונית</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
-            <div><div style={label}>מחיר</div><div style={value}>{formatCurrency(trade.initialEntry.price)}</div></div>
-            <div><div style={label}>כמות</div><div style={value}>{trade.initialEntry.quantity.toLocaleString()}</div></div>
-            <div><div style={label}>סה"כ</div><div style={value}>{formatCurrency(trade.initialEntry.totalAmount)}</div></div>
-            {trade.initialEntry.sl ? <div><div style={label}>Stop Loss</div><div style={{ ...value, color: '#ef4444' }}>{formatCurrency(trade.initialEntry.sl)}</div></div> : null}
-            {trade.initialEntry.tp ? <div><div style={label}>Take Profit</div><div style={{ ...value, color: '#22c55e' }}>{formatCurrency(trade.initialEntry.tp)}</div></div> : null}
-            {trade.initialEntry.risk ? <div><div style={label}>סיכון</div><div style={{ ...value, color: '#f59e0b' }}>{formatCurrency(trade.initialEntry.risk)}</div></div> : null}
+            <div><div style={labelStyle}>מחיר</div><div style={valueStyle}>{formatCurrency(trade.initialEntry.price)}</div></div>
+            <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{trade.initialEntry.quantity.toLocaleString()}</div></div>
+            <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(trade.initialEntry.totalAmount)}</div></div>
+            {trade.initialEntry.sl ? <div><div style={labelStyle}>Stop Loss</div><div style={{ ...valueStyle, color: '#ef4444' }}>{formatCurrency(trade.initialEntry.sl)}</div></div> : null}
+            {trade.initialEntry.tp ? <div><div style={labelStyle}>Take Profit</div><div style={{ ...valueStyle, color: '#22c55e' }}>{formatCurrency(trade.initialEntry.tp)}</div></div> : null}
+            {trade.initialEntry.risk ? <div><div style={labelStyle}>סיכון</div><div style={{ ...valueStyle, color: '#f59e0b' }}>{formatCurrency(trade.initialEntry.risk)}</div></div> : null}
           </div>
         </div>
 
@@ -131,10 +156,10 @@ export default function TradeDetail({ trade, onBack, onEdit }: TradeDetailProps)
               <div key={i} style={{ display: 'flex', gap: '24px', padding: '10px 0', borderBottom: i < trade.reinforcements.length - 1 ? '1px solid rgba(71,85,105,0.2)' : 'none' }}>
                 <div style={{ minWidth: '20px', color: '#475569', fontSize: '12px', paddingTop: '2px' }}>#{i + 1}</div>
                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                  <div><div style={label}>מחיר</div><div style={value}>{formatCurrency(r.price)}</div></div>
-                  <div><div style={label}>כמות</div><div style={value}>{r.quantity.toLocaleString()}</div></div>
-                  <div><div style={label}>סה"כ</div><div style={value}>{formatCurrency(r.totalAmount)}</div></div>
-                  {r.date && <div><div style={label}>תאריך</div><div style={value}>{formatDate(r.date)}</div></div>}
+                  <div><div style={labelStyle}>מחיר</div><div style={valueStyle}>{formatCurrency(r.price)}</div></div>
+                  <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{r.quantity.toLocaleString()}</div></div>
+                  <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(r.totalAmount)}</div></div>
+                  {r.date && <div><div style={labelStyle}>תאריך</div><div style={valueStyle}>{formatDate(r.date)}</div></div>}
                 </div>
               </div>
             ))
@@ -163,13 +188,13 @@ export default function TradeDetail({ trade, onBack, onEdit }: TradeDetailProps)
                     {i + 1}
                   </div>
                   <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', flex: 1 }}>
-                    <div><div style={label}>מחיר יציאה</div><div style={value}>{formatCurrency(ex.price)}</div></div>
-                    <div><div style={label}>כמות</div><div style={value}>{ex.quantity.toLocaleString()}</div></div>
-                    <div><div style={label}>סה"כ</div><div style={value}>{formatCurrency(ex.totalAmount)}</div></div>
-                    <div><div style={label}>רווח/הפסד</div><div style={{ ...value, color: exProfit ? '#22c55e' : '#ef4444', fontSize: '16px' }}>{formatCurrency(ex.profitLoss)}</div></div>
-                    <div><div style={label}>%</div><div style={{ ...value, color: exProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(ex.profitLossPercent)}</div></div>
-                    {ex.date && <div><div style={label}>תאריך</div><div style={value}>{formatDate(ex.date)}</div></div>}
-                    {ex.notes && <div style={{ flex: 1, minWidth: '140px' }}><div style={label}>הערות</div><div style={{ ...value, color: '#94a3b8', fontWeight: 400, fontSize: '13px' }}>{ex.notes}</div></div>}
+                    <div><div style={labelStyle}>מחיר יציאה</div><div style={valueStyle}>{formatCurrency(ex.price)}</div></div>
+                    <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{ex.quantity.toLocaleString()}</div></div>
+                    <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(ex.totalAmount)}</div></div>
+                    <div><div style={labelStyle}>רווח/הפסד</div><div style={{ ...valueStyle, color: exProfit ? '#22c55e' : '#ef4444', fontSize: '16px' }}>{formatCurrency(ex.profitLoss)}</div></div>
+                    <div><div style={labelStyle}>%</div><div style={{ ...valueStyle, color: exProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(ex.profitLossPercent)}</div></div>
+                    {ex.date && <div><div style={labelStyle}>תאריך</div><div style={valueStyle}>{formatDate(ex.date)}</div></div>}
+                    {ex.notes && <div style={{ flex: 1, minWidth: '140px' }}><div style={labelStyle}>הערות</div><div style={{ ...valueStyle, color: '#94a3b8', fontWeight: 400, fontSize: '13px' }}>{ex.notes}</div></div>}
                   </div>
                 </div>
               );
@@ -177,6 +202,32 @@ export default function TradeDetail({ trade, onBack, onEdit }: TradeDetailProps)
           </div>
         )}
       </div>
+
+      {/* Entry Reason / Exit Reason */}
+      {(trade.entryReason || trade.exitReason) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+          {trade.entryReason && (
+            <div style={card()}>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>סיבת כניסה</h2>
+              <p style={{ margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.7' }}>{trade.entryReason}</p>
+            </div>
+          )}
+          {trade.exitReason && (
+            <div style={card()}>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>סיבת יציאה</h2>
+              <p style={{ margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.7' }}>{trade.exitReason}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Conclusions */}
+      {trade.conclusions && (
+        <div style={{ ...card(), marginBottom: '16px', backgroundColor: 'rgba(14,165,233,0.05)', border: '1px solid rgba(14,165,233,0.2)' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0ea5e9', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>מסקנות ולקחים</h2>
+          <p style={{ margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.7' }}>{trade.conclusions}</p>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 

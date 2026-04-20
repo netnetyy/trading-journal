@@ -33,8 +33,12 @@ export interface Trade {
   totalProfitLoss: number;
   totalProfitLossPercent: number;
   rr: number; // risk/reward ratio achieved
+  commissions: number; // total commissions (buy + sell legs)
+  entryReason: string;
+  exitReason: string;
+  conclusions: string;
   notes: string;
-  behavioralTags: string[]; // e.g. 'FOMO', 'early-entry', 'poor-management', 'no-plan', 'good-trade'
+  behavioralTags: string[];
   createdAt: string;
 }
 
@@ -49,4 +53,6 @@ export interface AppData {
   trades: Trade[];
   deposits: PortfolioDeposit[];
   portfolioBaseValue: number; // manually-editable base (initial capital + all deposits)
+  defaultCommissionPerAction: number; // $ per buy/sell leg, default 2.5
+  riskUnitValue: number; // $ value of one risk unit, user-defined
 }

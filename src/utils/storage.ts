@@ -23,6 +23,10 @@ const sampleTrades: Trade[] = [
     totalProfitLoss: 850,
     totalProfitLossPercent: 20,
     rr: 2.43,
+    commissions: 5,
+    entryReason: '',
+    exitReason: '',
+    conclusions: '',
     notes: 'פריצה יפה עם נפח גבוה',
     behavioralTags: ['good-trade'],
     createdAt: '2025-01-15T10:00:00Z',
@@ -42,6 +46,10 @@ const sampleTrades: Trade[] = [
     totalProfitLoss: 450,
     totalProfitLossPercent: 9.8,
     rr: 2.14,
+    commissions: 5,
+    entryReason: '',
+    exitReason: '',
+    conclusions: '',
     notes: 'שורט יפה בירידת שוק',
     behavioralTags: ['good-trade'],
     createdAt: '2025-01-22T09:30:00Z',
@@ -61,6 +69,10 @@ const sampleTrades: Trade[] = [
     totalProfitLoss: -530,
     totalProfitLossPercent: -7.3,
     rr: -0.81,
+    commissions: 7.5,
+    entryReason: '',
+    exitReason: '',
+    conclusions: '',
     notes: 'חיזקתי בירידה - טעות',
     behavioralTags: ['poor-management', 'FOMO'],
     createdAt: '2025-02-05T11:00:00Z',
@@ -80,6 +92,10 @@ const sampleTrades: Trade[] = [
     totalProfitLoss: 1100,
     totalProfitLossPercent: 25,
     rr: 2.75,
+    commissions: 5,
+    entryReason: '',
+    exitReason: '',
+    conclusions: '',
     notes: 'מגמה חזקה, החזקתי טוב',
     behavioralTags: ['good-trade'],
     createdAt: '2025-02-18T10:15:00Z',
@@ -99,6 +115,10 @@ const sampleTrades: Trade[] = [
     totalProfitLoss: -560,
     totalProfitLossPercent: -12.1,
     rr: -1.17,
+    commissions: 5,
+    entryReason: '',
+    exitReason: '',
+    conclusions: '',
     notes: 'כניסה מוקדמת מדי לפני אישור מגמה',
     behavioralTags: ['early-entry', 'no-plan'],
     createdAt: '2025-03-03T14:00:00Z',
@@ -118,6 +138,10 @@ const sampleTrades: Trade[] = [
     totalProfitLoss: 780,
     totalProfitLossPercent: 14.3,
     rr: 1.86,
+    commissions: 5,
+    entryReason: '',
+    exitReason: '',
+    conclusions: '',
     notes: 'שורט מוצלח לאחר כישלון פריצה',
     behavioralTags: ['good-trade'],
     createdAt: '2025-03-15T09:45:00Z',
@@ -128,11 +152,28 @@ function migrate(parsed: AppData): AppData {
   if (parsed.portfolioBaseValue === undefined) {
     parsed.portfolioBaseValue = parsed.deposits?.reduce((s, d) => s + d.amount, 0) ?? 0;
   }
+  if (parsed.defaultCommissionPerAction === undefined) parsed.defaultCommissionPerAction = 2.5;
+  if (parsed.riskUnitValue === undefined) parsed.riskUnitValue = 100;
+  if (parsed.trades) {
+    parsed.trades = parsed.trades.map(t => ({
+      commissions: (t.reinforcements?.length ?? 0) * 2.5 * 2 + 5,
+      entryReason: '',
+      exitReason: '',
+      conclusions: '',
+      ...t,
+    }));
+  }
   return parsed;
 }
 
 function defaultData(): AppData {
-  return { trades: sampleTrades, deposits: sampleDeposits, portfolioBaseValue: 10000 };
+  return {
+    trades: sampleTrades,
+    deposits: sampleDeposits,
+    portfolioBaseValue: 10000,
+    defaultCommissionPerAction: 2.5,
+    riskUnitValue: 100,
+  };
 }
 
 // ── Supabase ──────────────────────────────────────────────────────────────────

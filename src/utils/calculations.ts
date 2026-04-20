@@ -1,21 +1,100 @@
 import type { Trade, AppData } from '../types/trade';
 
+export interface PeriodStats {
+  period: string;
+  count: number;
+  wins: number;
+  winRate: number;
+  netPL: number;
+  commissions: number;
+  bestTrade: number;
+  worstTrade: number;
+  avgRR: number;
+  riskUnits: number;
+}
+
+export function getNetProfitLoss(trade: Trade): number {
+  return trade.totalProfitLoss - (trade.commissions ?? 0);
+}
+
+export function getRiskUnits(trade: Trade, riskUnitValue: number): number {
+  if (!riskUnitValue) return 0;
+  return getNetProfitLoss(trade) / riskUnitValue;
+}
+
+const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+function buildPeriodStats(trades: Trade[], period: string, riskUnitValue: number): PeriodStats {
+  const wins = trades.filter(t => getNetProfitLoss(t) > 0).length;
+  const netPLs = trades.map(getNetProfitLoss);
+  const netPL = netPLs.reduce((s, v) => s + v, 0);
+  const commissions = trades.reduce((s, t) => s + (t.commissions ?? 0), 0);
+  const rrs = trades.map(t => t.rr).filter(r => r !== 0 && isFinite(r));
+  return {
+    period,
+    count: trades.length,
+    wins,
+    winRate: trades.length ? (wins / trades.length) * 100 : 0,
+    netPL,
+    commissions,
+    bestTrade: netPLs.length ? Math.max(...netPLs) : 0,
+    worstTrade: netPLs.length ? Math.min(...netPLs) : 0,
+    avgRR: rrs.length ? rrs.reduce((s, r) => s + r, 0) / rrs.length : 0,
+    riskUnits: riskUnitValue ? netPL / riskUnitValue : 0,
+  };
+}
+
+export function getMonthlyStats(data: AppData): PeriodStats[] {
+  const riskUnitValue = data.riskUnitValue ?? 100;
+  const byMonth = new Map<string, Trade[]>();
+  for (const t of data.trades) {
+    const [y, m] = t.date.split('-');
+    const key = `${y}-${m}`;
+    if (!byMonth.has(key)) byMonth.set(key, []);
+    byMonth.get(key)!.push(t);
+  }
+  return [...byMonth.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, trades]) => {
+      const [y, m] = key.split('-');
+      const label = `${HEBREW_MONTHS[parseInt(m, 10) - 1]} ${y}`;
+      return buildPeriodStats(trades, label, riskUnitValue);
+    });
+}
+
+export function getYearlyStats(data: AppData): PeriodStats[] {
+  const riskUnitValue = data.riskUnitValue ?? 100;
+  const byYear = new Map<string, Trade[]>();
+  for (const t of data.trades) {
+    const y = t.date.split('-')[0];
+    if (!byYear.has(y)) byYear.set(y, []);
+    byYear.get(y)!.push(t);
+  }
+  return [...byYear.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([year, trades]) => buildPeriodStats(trades, year, riskUnitValue));
+}
+
 export function getPortfolioValue(data: AppData): number {
-  return data.portfolioBaseValue + getTotalProfitLoss(data.trades);
+  return data.portfolioBaseValue + getTotalNetProfitLoss(data.trades);
+}
+
+export function getTotalNetProfitLoss(trades: Trade[]): number {
+  return trades.reduce((sum, t) => sum + getNetProfitLoss(t), 0);
 }
 
 // Portfolio value just before the given trade executed (chronological)
 export function getPortfolioValueAtTrade(data: AppData, trade: Trade): number {
   const priorPL = data.trades
     .filter((t) => t.date < trade.date || (t.date === trade.date && t.createdAt < trade.createdAt))
-    .reduce((sum, t) => sum + t.totalProfitLoss, 0);
+    .reduce((sum, t) => sum + getNetProfitLoss(t), 0);
   return data.portfolioBaseValue + priorPL;
 }
 
 export function getPLPercentOfPortfolio(data: AppData, trade: Trade): number {
   const base = getPortfolioValueAtTrade(data, trade);
   if (base === 0) return 0;
-  return (trade.totalProfitLoss / base) * 100;
+  return (getNetProfitLoss(trade) / base) * 100;
 }
 
 export function getTotalProfitLoss(trades: Trade[]): number {
@@ -24,7 +103,7 @@ export function getTotalProfitLoss(trades: Trade[]): number {
 
 export function getWinRate(trades: Trade[]): number {
   if (trades.length === 0) return 0;
-  const wins = trades.filter((t) => t.totalProfitLoss > 0).length;
+  const wins = trades.filter((t) => getNetProfitLoss(t) > 0).length;
   return (wins / trades.length) * 100;
 }
 
@@ -37,7 +116,7 @@ export function getEquityCurve(data: AppData): { date: string; value: number; la
   type Event = { date: string; delta: number; kind: 'deposit' | 'trade' };
   const events: Event[] = [
     ...data.deposits.map((d) => ({ date: d.date, delta: d.amount, kind: 'deposit' as const })),
-    ...data.trades.map((t) => ({ date: t.date, delta: t.totalProfitLoss, kind: 'trade' as const })),
+    ...data.trades.map((t) => ({ date: t.date, delta: getNetProfitLoss(t), kind: 'trade' as const })),
   ].sort((a, b) => a.date.localeCompare(b.date));
 
   if (events.length === 0) return [];
@@ -79,7 +158,7 @@ export function getPLCurve(data: AppData): { date: string; value: number }[] {
   // Aggregate same-date trades into one point to avoid Recharts tooltip confusion
   const byDate = new Map<string, number>();
   for (const trade of sorted) {
-    byDate.set(trade.date, (byDate.get(trade.date) ?? 0) + trade.totalProfitLoss);
+    byDate.set(trade.date, (byDate.get(trade.date) ?? 0) + getNetProfitLoss(trade));
   }
 
   const curve: { date: string; value: number }[] = [];

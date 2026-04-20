@@ -1,27 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import type { Trade, TradeEntry, TradeExit } from '../types/trade';
 import { generateId } from '../utils/storage';
-import { calculateAvgEntryPrice, formatCurrency } from '../utils/calculations';
+import { calculateAvgEntryPrice, formatCurrency, getNetProfitLoss } from '../utils/calculations';
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface TradeFormProps {
   existing?: Trade;
   nextSerial: number;
+  defaultCommissionPerAction: number;
   onSave: (trade: Trade) => void;
   onCancel: () => void;
 }
 
 const BEHAVIORAL_TAGS = [
   { id: 'good-trade', label: 'עסקה טובה', color: '#22c55e' },
-  { id: 'FOMO', label: 'FOMO', color: '#e879f9' },
-  { id: 'early-entry', label: 'כניסה מוקדמת', color: '#e879f9' },
-  { id: 'poor-management', label: 'ניהול לקוי', color: '#e879f9' },
-  { id: 'no-plan', label: 'אין תוכנית', color: '#e879f9' },
-  { id: 'mistake', label: 'עסקה בטעות', color: '#e879f9' },
-  { id: 'no-follow', label: 'לא עקבתי אחר התוכנית', color: '#e879f9' },
+  { id: 'self-analysis', label: 'ניתוח עצמי', color: '#3b82f6' },
   { id: 'by-raz', label: 'לפי רז', color: '#a78bfa' },
   { id: 'by-niv', label: 'לפי ניב', color: '#fbbf24' },
-  { id: 'self-analysis', label: 'ניתוח עצמי', color: '#3b82f6' },
+  { id: 'FOMO', label: 'FOMO', color: '#f43f5e' },
+  { id: 'movement-entry', label: 'כניסה בתנועה', color: '#f43f5e' },
+  { id: 'low-confidence', label: 'כניסה עם ביטחון נמוך', color: '#f43f5e' },
+  { id: 'early-entry', label: 'כניסה מוקדמת', color: '#f43f5e' },
+  { id: 'adding-before-confirmation', label: 'הוספה לפני אישור', color: '#f43f5e' },
+  { id: 'unexecuted-limit', label: 'לימיט שלא בוצע', color: '#f43f5e' },
+  { id: 'early-exit', label: 'יציאה מוקדמת', color: '#f43f5e' },
+  { id: 'late-exit', label: 'יציאה מאוחרת', color: '#f43f5e' },
+  { id: 'risk-unit-deviation', label: 'חריגה מיחידת סיכון', color: '#f43f5e' },
+  { id: 'missed-key-points', label: 'פספוס נקודות מפתח', color: '#f43f5e' },
+  { id: 'profit-to-loss', label: 'המרת רווח להפסד', color: '#f43f5e' },
+  { id: 'trade-infatuation', label: 'התאהבות בעסקה', color: '#f43f5e' },
+  { id: 'work-after-exit', label: 'עבודה אחרי יציאה', color: '#f43f5e' },
+  { id: 'stock-based-management', label: 'ניהול על בסיס המניה', color: '#f43f5e' },
+  { id: 'wrong-goal-planning', label: 'תכנון מטרה שגוי', color: '#f43f5e' },
+  { id: 'tight-stop-loss', label: 'סטופ לוס צמוד', color: '#f43f5e' },
+  { id: 'wrong-share-quantity', label: 'כמות מניות שגויה', color: '#f43f5e' },
+  { id: 'poor-management', label: 'ניהול לקוי', color: '#f43f5e' },
+  { id: 'no-plan', label: 'אין תוכנית', color: '#f43f5e' },
+  { id: 'mistake', label: 'עסקה בטעות', color: '#f43f5e' },
+  { id: 'no-follow', label: 'לא עקבתי אחר התוכנית', color: '#f43f5e' },
 ];
 
 const inputStyle: React.CSSProperties = {
@@ -68,15 +84,20 @@ function emptyExit(): TradeExit {
   return { price: 0, quantity: 0, totalAmount: 0, profitLoss: 0, profitLossPercent: 0, notes: '' };
 }
 
-export default function TradeForm({ existing, nextSerial, onSave, onCancel }: TradeFormProps) {
+export default function TradeForm({ existing, nextSerial, defaultCommissionPerAction, onSave, onCancel }: TradeFormProps) {
   const [type, setType] = useState<'long' | 'short'>(existing?.type ?? 'long');
   const [stockName, setStockName] = useState(existing?.stockName ?? '');
   const [date, setDate] = useState(existing?.date ?? new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState(existing?.notes ?? '');
+  const [entryReason, setEntryReason] = useState(existing?.entryReason ?? '');
+  const [exitReason, setExitReason] = useState(existing?.exitReason ?? '');
+  const [conclusions, setConclusions] = useState(existing?.conclusions ?? '');
   const [behavioralTags, setBehavioralTags] = useState<string[]>(existing?.behavioralTags ?? []);
   const [showReinforcements, setShowReinforcements] = useState(
     (existing?.reinforcements?.length ?? 0) > 0
   );
+  const [commissionsManual, setCommissionsManual] = useState(false);
+  const [commissions, setCommissions] = useState(existing?.commissions ?? defaultCommissionPerAction * 2);
 
   const [initialEntry, setInitialEntry] = useState<TradeEntry>(
     existing?.initialEntry ?? { price: 0, quantity: 0, sl: 0, tp: 0, totalAmount: 0, risk: 0 }
@@ -87,6 +108,14 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
   const [exits, setExits] = useState<TradeExit[]>(
     existing?.exits?.length ? existing.exits : [emptyExit()]
   );
+
+  // Auto-calc commissions: 1 entry + reinforcements + exits
+  useEffect(() => {
+    if (!commissionsManual) {
+      const legs = 1 + reinforcements.length + exits.filter(e => e.price > 0 && e.quantity > 0).length;
+      setCommissions(Math.round(legs * defaultCommissionPerAction * 2 * 100) / 100);
+    }
+  }, [reinforcements.length, exits, commissionsManual, defaultCommissionPerAction]);
 
   // Live calculations
   const avgEntry = calculateAvgEntryPrice(initialEntry, reinforcements);
@@ -101,7 +130,9 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
     return sum + (type === 'long' ? exitTotal - costBasis : costBasis - exitTotal);
   }, 0);
 
+  const netPL = totalPL - commissions;
   const totalPLPercent = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
+  const netPLPercent = totalInvested > 0 ? (netPL / totalInvested) * 100 : 0;
 
   const risk =
     initialEntry.sl && initialEntry.sl > 0
@@ -110,7 +141,6 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
   const rr = risk > 0 ? totalPL / risk : 0;
 
   useEffect(() => {
-    // Update initial entry total
     setInitialEntry((prev) => ({
       ...prev,
       totalAmount: prev.price * prev.quantity,
@@ -178,6 +208,10 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
       totalProfitLoss: Math.round(totalPL * 100) / 100,
       totalProfitLossPercent: Math.round(totalPLPercent * 100) / 100,
       rr: Math.round(rr * 100) / 100,
+      commissions: Math.round(commissions * 100) / 100,
+      entryReason,
+      exitReason,
+      conclusions,
       notes,
       behavioralTags,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
@@ -221,8 +255,7 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
       {/* Section 1: Trade Details */}
       <div style={sectionStyle}>
         <h2 style={sectionTitle}>פרטי עסקה</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-          {/* Type Toggle */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
           <div>
             <label style={labelStyle}>סוג עסקה</label>
             <div style={{ display: 'flex', gap: '0', backgroundColor: '#0f172a', borderRadius: '8px', padding: '3px' }}>
@@ -270,6 +303,20 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
               value={date}
               onChange={(e) => setDate(e.target.value)}
               style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>עמלות ($)</label>
+            <input
+              type="number"
+              value={commissions || ''}
+              onChange={(e) => {
+                setCommissionsManual(true);
+                setCommissions(parseFloat(e.target.value) || 0);
+              }}
+              placeholder="5.00"
+              style={inputStyle}
+              step="0.01"
             />
           </div>
         </div>
@@ -579,9 +626,15 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
               { label: 'סה"כ מניות', value: totalShares.toLocaleString(), color: '#e2e8f0' },
               { label: 'סה"כ השקעה', value: formatCurrency(totalInvested), color: '#e2e8f0' },
               {
-                label: 'רווח/הפסד',
+                label: 'רווח/הפסד גולמי',
                 value: formatCurrency(totalPL) + ' (' + (totalPLPercent >= 0 ? '+' : '') + totalPLPercent.toFixed(1) + '%)',
                 color: totalPL >= 0 ? '#22c55e' : '#ef4444',
+              },
+              { label: 'עמלות', value: formatCurrency(commissions), color: '#f59e0b' },
+              {
+                label: 'רווח/הפסד נטו',
+                value: formatCurrency(netPL) + ' (' + (netPLPercent >= 0 ? '+' : '') + netPLPercent.toFixed(1) + '%)',
+                color: netPL >= 0 ? '#22c55e' : '#ef4444',
               },
               { label: 'סיכון ($)', value: formatCurrency(risk), color: '#f59e0b' },
               { label: 'R/R שהושג', value: isFinite(rr) ? rr.toFixed(2) : '—', color: rr >= 1 ? '#22c55e' : rr >= 0 ? '#f59e0b' : '#ef4444' },
@@ -595,7 +648,31 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
         </div>
       )}
 
-      {/* Section 6: Behavioral Tags */}
+      {/* Section 6: Entry Reason */}
+      <div style={sectionStyle}>
+        <h2 style={sectionTitle}>סיבת כניסה</h2>
+        <textarea
+          value={entryReason}
+          onChange={(e) => setEntryReason(e.target.value)}
+          placeholder="מה הסיבה לכניסה לעסקה? מה ראית בגרף?"
+          rows={3}
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.6' }}
+        />
+      </div>
+
+      {/* Section 7: Exit Reason */}
+      <div style={sectionStyle}>
+        <h2 style={sectionTitle}>סיבת יציאה</h2>
+        <textarea
+          value={exitReason}
+          onChange={(e) => setExitReason(e.target.value)}
+          placeholder="מה הסיבה ליציאה מהעסקה?"
+          rows={3}
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.6' }}
+        />
+      </div>
+
+      {/* Section 8: Behavioral Tags */}
       <div style={sectionStyle}>
         <h2 style={sectionTitle}>תגיות התנהגותיות</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -624,19 +701,27 @@ export default function TradeForm({ existing, nextSerial, onSave, onCancel }: Tr
         </div>
       </div>
 
-      {/* Section 7: Notes */}
+      {/* Section 9: Notes */}
       <div style={sectionStyle}>
         <h2 style={sectionTitle}>הערות</h2>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="הוסף הערות לגבי העסקה..."
-          rows={4}
-          style={{
-            ...inputStyle,
-            resize: 'vertical',
-            lineHeight: '1.6',
-          }}
+          rows={3}
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.6' }}
+        />
+      </div>
+
+      {/* Section 10: Conclusions */}
+      <div style={sectionStyle}>
+        <h2 style={sectionTitle}>מסקנות ולקחים</h2>
+        <textarea
+          value={conclusions}
+          onChange={(e) => setConclusions(e.target.value)}
+          placeholder="מה למדת מהעסקה הזו? מה תעשה אחרת בפעם הבאה?"
+          rows={3}
+          style={{ ...inputStyle, resize: 'vertical', lineHeight: '1.6' }}
         />
       </div>
 

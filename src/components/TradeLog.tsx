@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { AppData } from '../types/trade';
-import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio } from '../utils/calculations';
+import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits } from '../utils/calculations';
 import { Edit2, Trash2, Search, ChevronUp, ChevronDown, Eye } from 'lucide-react';
 
 interface TradeLogProps {
@@ -203,7 +203,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                 </th>
                 <th style={thStyle} onClick={() => handleSort('totalProfitLoss')}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    רווח/הפסד $ <SortIcon field="totalProfitLoss" />
+                    רווח/הפסד נטו <SortIcon field="totalProfitLoss" />
                   </span>
                 </th>
                 <th style={thStyle} onClick={() => handleSort('totalProfitLossPercent')}>
@@ -217,13 +217,15 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                     R/R <SortIcon field="rr" />
                   </span>
                 </th>
+                {data.riskUnitValue > 0 && <th style={{ ...thStyle, color: '#f59e0b' }}>יחידות R</th>}
                 <th style={thStyle}>הערות</th>
                 <th style={thStyle}>פעולות</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((trade, idx) => {
-                const isProfit = trade.totalProfitLoss >= 0;
+                const netPL = getNetProfitLoss(trade);
+                const isProfit = netPL >= 0;
                 const isDeleting = confirmDelete === trade.id;
                 return (
                   <tr
@@ -263,20 +265,12 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                       {trade.totalShares.toLocaleString()}
                     </td>
                     <td
-                      style={{
-                        padding: '10px 12px',
-                        color: isProfit ? '#22c55e' : '#ef4444',
-                        fontWeight: 700,
-                      }}
+                      style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 700 }}
+                      title={`גולמי: ${formatCurrency(trade.totalProfitLoss)} | עמלות: ${formatCurrency(trade.commissions ?? 0)}`}
                     >
-                      {formatCurrency(trade.totalProfitLoss)}
+                      {formatCurrency(netPL)}
                     </td>
-                    <td
-                      style={{
-                        padding: '10px 12px',
-                        color: isProfit ? '#22c55e' : '#ef4444',
-                      }}
-                    >
+                    <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>
                       {formatPercent(trade.totalProfitLossPercent)}
                     </td>
                     <td
@@ -289,23 +283,19 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                     >
                       {formatPercent(getPLPercentOfPortfolio(data, trade))}
                     </td>
-                    <td
-                      style={{
-                        padding: '10px 12px',
-                        color: trade.rr >= 1 ? '#22c55e' : trade.rr >= 0 ? '#f59e0b' : '#ef4444',
-                      }}
-                    >
+                    <td style={{ padding: '10px 12px', color: trade.rr >= 1 ? '#22c55e' : trade.rr >= 0 ? '#f59e0b' : '#ef4444' }}>
                       {trade.rr.toFixed(2)}
                     </td>
+                    {data.riskUnitValue > 0 && (() => {
+                      const ru = getRiskUnits(trade, data.riskUnitValue);
+                      return (
+                        <td style={{ padding: '10px 12px', color: ru >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                          {(ru >= 0 ? '+' : '') + ru.toFixed(2)}R
+                        </td>
+                      );
+                    })()}
                     <td
-                      style={{
-                        padding: '10px 12px',
-                        color: '#64748b',
-                        maxWidth: '160px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
+                      style={{ padding: '10px 12px', color: '#64748b', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                       title={trade.notes}
                     >
                       {trade.notes || '—'}
@@ -358,7 +348,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={12} style={{ textAlign: 'center', padding: '48px', color: '#475569' }}>
+                  <td colSpan={13} style={{ textAlign: 'center', padding: '48px', color: '#475569' }}>
                     אין עסקאות להצגה
                   </td>
                 </tr>

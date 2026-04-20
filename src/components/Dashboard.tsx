@@ -12,13 +12,14 @@ import {
 import type { AppData } from '../types/trade';
 import {
   getPortfolioValue,
-  getTotalProfitLoss,
+  getTotalNetProfitLoss,
   getWinRate,
   getEquityCurve,
   getPLCurve,
   formatCurrency,
   formatPercent,
   formatDate,
+  getNetProfitLoss,
 } from '../utils/calculations';
 import { TrendingUp, TrendingDown, Activity, DollarSign, Percent, Hash, Edit2, Plus, Trash2, X } from 'lucide-react';
 
@@ -28,6 +29,8 @@ interface DashboardProps {
   onSetPortfolioBase: (value: number) => void;
   onAddDeposit: (amount: number, date: string, note: string) => void;
   onDeleteDeposit: (id: string) => void;
+  onSetRiskUnit: (value: number) => void;
+  onSetDefaultCommission: (value: number) => void;
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
@@ -51,9 +54,9 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
 };
 
-export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddDeposit, onDeleteDeposit }: DashboardProps) {
+export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddDeposit, onDeleteDeposit, onSetRiskUnit, onSetDefaultCommission }: DashboardProps) {
   const portfolioValue = getPortfolioValue(data);
-  const totalPL = getTotalProfitLoss(data.trades);
+  const totalPL = getTotalNetProfitLoss(data.trades);
   const winRate = getWinRate(data.trades);
   const equityCurve = getEquityCurve(data);
   const plCurve = getPLCurve(data);
@@ -71,6 +74,11 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
   const [depositDate, setDepositDate] = useState(new Date().toISOString().split('T')[0]);
   const [depositNote, setDepositNote] = useState('');
   const [confirmDeleteDeposit, setConfirmDeleteDeposit] = useState<string | null>(null);
+
+  const [editingRiskUnit, setEditingRiskUnit] = useState(false);
+  const [riskUnitVal, setRiskUnitVal] = useState('');
+  const [editingCommission, setEditingCommission] = useState(false);
+  const [commissionVal, setCommissionVal] = useState('');
 
   const handleSavePortfolio = () => {
     const val = parseFloat(editPortfolioVal.replace(/,/g, ''));
@@ -174,6 +182,80 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
             </div>
           );
         })}
+      </div>
+
+      {/* Trading Settings Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+        {/* Risk Unit Setting */}
+        <div style={card({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' })}>
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>יחידת סיכון (R)</div>
+            {editingRiskUnit ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={riskUnitVal}
+                  onChange={(e) => setRiskUnitVal(e.target.value)}
+                  style={{ ...inputStyle, width: '100px', padding: '6px 10px', fontSize: '14px' }}
+                  autoFocus
+                  placeholder="100"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { const v = parseFloat(riskUnitVal); if (!isNaN(v) && v > 0) { onSetRiskUnit(v); setEditingRiskUnit(false); } }
+                    if (e.key === 'Escape') setEditingRiskUnit(false);
+                  }}
+                />
+                <button onClick={() => { const v = parseFloat(riskUnitVal); if (!isNaN(v) && v > 0) { onSetRiskUnit(v); setEditingRiskUnit(false); } }} style={{ backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' }}>שמור</button>
+                <button onClick={() => setEditingRiskUnit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={14} /></button>
+              </div>
+            ) : (
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#f59e0b' }}>
+                {formatCurrency(data.riskUnitValue ?? 100)}
+                <span style={{ fontSize: '12px', color: '#64748b', marginRight: '6px' }}>לכל R</span>
+              </div>
+            )}
+          </div>
+          {!editingRiskUnit && (
+            <button onClick={() => { setRiskUnitVal(String(data.riskUnitValue ?? 100)); setEditingRiskUnit(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}>
+              <Edit2 size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Commission Setting */}
+        <div style={card({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' })}>
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>עמלה ברירת מחדל לפעולה</div>
+            {editingCommission ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={commissionVal}
+                  onChange={(e) => setCommissionVal(e.target.value)}
+                  style={{ ...inputStyle, width: '100px', padding: '6px 10px', fontSize: '14px' }}
+                  autoFocus
+                  placeholder="2.5"
+                  step="0.5"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { const v = parseFloat(commissionVal); if (!isNaN(v) && v >= 0) { onSetDefaultCommission(v); setEditingCommission(false); } }
+                    if (e.key === 'Escape') setEditingCommission(false);
+                  }}
+                />
+                <button onClick={() => { const v = parseFloat(commissionVal); if (!isNaN(v) && v >= 0) { onSetDefaultCommission(v); setEditingCommission(false); } }} style={{ backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' }}>שמור</button>
+                <button onClick={() => setEditingCommission(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={14} /></button>
+              </div>
+            ) : (
+              <div style={{ fontSize: '20px', fontWeight: 700, color: '#a78bfa' }}>
+                {formatCurrency(data.defaultCommissionPerAction ?? 2.5)}
+                <span style={{ fontSize: '12px', color: '#64748b', marginRight: '6px' }}>לקנייה / מכירה</span>
+              </div>
+            )}
+          </div>
+          {!editingCommission && (
+            <button onClick={() => { setCommissionVal(String(data.defaultCommissionPerAction ?? 2.5)); setEditingCommission(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}>
+              <Edit2 size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Equity Curve — total portfolio value */}
@@ -299,7 +381,8 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
               </thead>
               <tbody>
                 {recentTrades.map((trade) => {
-                  const isProfit = trade.totalProfitLoss >= 0;
+                  const netPL = getNetProfitLoss(trade);
+                  const isProfit = netPL >= 0;
                   return (
                     <tr
                       key={trade.id}
@@ -313,7 +396,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                           {trade.type === 'long' ? 'לונג' : 'שורט'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 600 }}>{formatCurrency(trade.totalProfitLoss)}</td>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 600 }}>{formatCurrency(netPL)}</td>
                       <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(trade.totalProfitLossPercent)}</td>
                     </tr>
                   );

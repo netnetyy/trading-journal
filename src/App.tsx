@@ -68,6 +68,14 @@ function App() {
     }));
   };
 
+  const handleSetRiskUnit = (value: number) => {
+    persist((prev) => ({ ...prev, riskUnitValue: value }));
+  };
+
+  const handleSetDefaultCommission = (value: number) => {
+    persist((prev) => ({ ...prev, defaultCommissionPerAction: value }));
+  };
+
   const handleDeleteDeposit = (id: string) => {
     persist((prev) => {
       const dep = prev.deposits.find((d) => d.id === id);
@@ -103,6 +111,8 @@ function App() {
             onSetPortfolioBase={handleSetPortfolioBase}
             onAddDeposit={handleAddDeposit}
             onDeleteDeposit={handleDeleteDeposit}
+            onSetRiskUnit={handleSetRiskUnit}
+            onSetDefaultCommission={handleSetDefaultCommission}
           />
         );
       case 'trades':
@@ -120,6 +130,7 @@ function App() {
         return viewTrade ? (
           <TradeDetail
             trade={viewTrade}
+            riskUnitValue={data.riskUnitValue ?? 100}
             onBack={() => navigate('trades')}
             onEdit={(id) => navigate('edit-trade', id)}
           />
@@ -129,6 +140,7 @@ function App() {
         return (
           <TradeForm
             nextSerial={nextSerial}
+            defaultCommissionPerAction={data.defaultCommissionPerAction ?? 2.5}
             onSave={handleSaveTrade}
             onCancel={() => navigate('trades')}
           />
@@ -138,12 +150,13 @@ function App() {
           <TradeForm
             existing={editTrade}
             nextSerial={nextSerial}
+            defaultCommissionPerAction={data.defaultCommissionPerAction ?? 2.5}
             onSave={handleSaveTrade}
             onCancel={() => navigate('trades')}
           />
         );
       case 'statistics':
-        return <Statistics trades={data.trades} onView={(id) => navigate('trade-detail', id)} />;
+        return <Statistics data={data} onView={(id) => navigate('trade-detail', id)} />;
       case 'longterm':
         return <LongTermInvestments />;
       default:
@@ -154,6 +167,8 @@ function App() {
             onSetPortfolioBase={handleSetPortfolioBase}
             onAddDeposit={handleAddDeposit}
             onDeleteDeposit={handleDeleteDeposit}
+            onSetRiskUnit={handleSetRiskUnit}
+            onSetDefaultCommission={handleSetDefaultCommission}
           />
         );
     }

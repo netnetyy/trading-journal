@@ -10,6 +10,7 @@ import {
   Cell,
 } from 'recharts';
 import type { AppData, Trade } from '../types/trade';
+import type { PeriodStats } from '../utils/calculations';
 import {
   formatCurrency,
   formatPercent,
@@ -19,7 +20,7 @@ import {
   getMonthlyStats,
   getYearlyStats,
 } from '../utils/calculations';
-import { Award, AlertTriangle, Calendar } from 'lucide-react';
+import { Award, AlertTriangle, Calendar, Eye, EyeOff, X } from 'lucide-react';
 
 interface StatisticsProps {
   data: AppData;
@@ -82,10 +83,162 @@ const thStyle: React.CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
+function buildTagCounts(trades: Trade[]): { tag: string; label: string; count: number }[] {
+  const counts: Record<string, number> = {};
+  for (const trade of trades) {
+    for (const tag of trade.behavioralTags) {
+      counts[tag] = (counts[tag] || 0) + 1;
+    }
+  }
+  return Object.entries(counts)
+    .map(([tag, count]) => ({ tag, label: BEHAVIORAL_LABELS[tag] || tag, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+interface PeriodModalProps {
+  period: PeriodStats;
+  trades: Trade[];
+  riskUnitValue: number;
+  onClose: () => void;
+  onView?: (id: string) => void;
+}
+
+function PeriodModal({ period, trades, riskUnitValue, onClose, onView }: PeriodModalProps) {
+  const tagCounts = buildTagCounts(trades);
+  const maxCount = tagCounts[0]?.count ?? 1;
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        padding: '40px 20px', overflowY: 'auto',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{
+        backgroundColor: '#1e293b', borderRadius: '16px',
+        border: '1px solid rgba(71,85,105,0.4)',
+        width: '100%', maxWidth: '860px',
+        padding: '28px', position: 'relative',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>
+              {period.period}
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '13px', margin: '4px 0 0' }}>
+              {period.count} עסקאות · הצלחה {period.winRate.toFixed(1)}%
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#64748b', padding: '4px',
+              borderRadius: '6px',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#f1f5f9')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
+          >
+            <X size={22} />
+          </button>
+        </div>
+
+        {/* Trades table */}
+        <div style={{ marginBottom: '28px' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '12px' }}>עסקאות</h3>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid rgba(71,85,105,0.4)' }}>
+                  {['מניה', 'תאריך', 'סוג', 'P&L נטו', '%', 'R/R', ...(riskUnitValue > 0 ? ['יחידות R'] : [])].map(h => (
+                    <th key={h} style={thStyle}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {trades.map(trade => {
+                  const netPL = getNetProfitLoss(trade);
+                  const isProfit = netPL >= 0;
+                  return (
+                    <tr
+                      key={trade.id}
+                      style={{ borderBottom: '1px solid rgba(71,85,105,0.2)', cursor: onView ? 'pointer' : 'default' }}
+                      onClick={() => { onView?.(trade.id); onClose(); }}
+                      onMouseEnter={(e) => { if (onView) (e.currentTarget as HTMLTableRowElement).style.backgroundColor = 'rgba(14,165,233,0.06)'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLTableRowElement).style.backgroundColor = ''; }}
+                    >
+                      <td style={{ padding: '9px 12px', color: '#f1f5f9', fontWeight: 700 }}>{trade.stockName}</td>
+                      <td style={{ padding: '9px 12px', color: '#94a3b8', fontSize: '13px' }}>{formatDate(trade.date)}</td>
+                      <td style={{ padding: '9px 12px' }}>
+                        <span style={{
+                          padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700,
+                          backgroundColor: trade.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
+                          color: trade.type === 'long' ? '#22c55e' : '#ef4444',
+                        }}>
+                          {trade.type === 'long' ? 'לונג' : 'שורט'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '9px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{formatCurrency(netPL)}</td>
+                      <td style={{ padding: '9px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(trade.totalProfitLossPercent)}</td>
+                      <td style={{ padding: '9px 12px', color: trade.rr >= 1 ? '#22c55e' : '#f59e0b' }}>{trade.rr.toFixed(2)}</td>
+                      {riskUnitValue > 0 && (
+                        <td style={{ padding: '9px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                          {getRiskUnits(trade, riskUnitValue) >= 0 ? '+' : ''}{getRiskUnits(trade, riskUnitValue).toFixed(2)}R
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Behavioral tag summary */}
+        {tagCounts.length > 0 && (
+          <div>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '14px' }}>
+              סיכום תגיות התנהגות
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {tagCounts.map(({ tag, label, count }) => (
+                <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '140px', fontSize: '12px', color: '#cbd5e1', textAlign: 'right', flexShrink: 0 }}>{label}</div>
+                  <div style={{ flex: 1, backgroundColor: '#0f172a', borderRadius: '4px', height: '10px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: '4px',
+                      width: `${(count / maxCount) * 100}%`,
+                      backgroundColor: getTagColor(tag),
+                      transition: 'width 0.3s',
+                    }} />
+                  </div>
+                  <div style={{ width: '28px', fontSize: '13px', fontWeight: 700, color: getTagColor(tag), textAlign: 'left', flexShrink: 0 }}>{count}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: '11px', color: '#475569', margin: '12px 0 0', textAlign: 'right' }}>
+              הכי נפוצה: <span style={{ color: getTagColor(tagCounts[0].tag) }}>{tagCounts[0].label}</span>
+              {tagCounts.length > 1 && (
+                <> · הכי פחות נפוצה: <span style={{ color: getTagColor(tagCounts[tagCounts.length - 1].tag) }}>{tagCounts[tagCounts.length - 1].label}</span></>
+              )}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Statistics({ data, onView }: StatisticsProps) {
   const trades = data.trades;
   const riskUnitValue = data.riskUnitValue ?? 100;
   const [periodTab, setPeriodTab] = useState<'monthly' | 'yearly'>('monthly');
+  const [showPL, setShowPL] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodStats | null>(null);
 
   const netPLs = trades.map(getNetProfitLoss);
   const wins = trades.filter((_, i) => netPLs[i] > 0);
@@ -157,8 +310,22 @@ export default function Statistics({ data, onView }: StatisticsProps) {
     );
   };
 
+  const selectedPeriodTrades = selectedPeriod
+    ? trades.filter(t => selectedPeriod.tradeIds.includes(t.id))
+    : [];
+
   return (
     <div style={{ padding: '28px', direction: 'rtl' }}>
+      {selectedPeriod && (
+        <PeriodModal
+          period={selectedPeriod}
+          trades={selectedPeriodTrades}
+          riskUnitValue={riskUnitValue}
+          onClose={() => setSelectedPeriod(null)}
+          onView={onView}
+        />
+      )}
+
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>סטטיסטיקות</h1>
         <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>ניתוח מעמיק של ביצועי המסחר</p>
@@ -244,25 +411,51 @@ export default function Statistics({ data, onView }: StatisticsProps) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid rgba(71,85,105,0.4)' }}>
-                  {['תקופה', 'עסקאות', 'הצלחה %', 'P&L נטו', 'עמלות', ...(riskUnitValue > 0 ? ['יחידות R'] : []), 'R/R ממוצע', 'הטובה', 'הגרועה'].map(h => (
+                  {[
+                    'תקופה',
+                    'עסקאות',
+                    'הצלחה %',
+                    ...(riskUnitValue > 0 ? ['יחידות R'] : []),
+                    'R/R ממוצע',
+                    'הטובה',
+                    'הגרועה',
+                    'עמלות',
+                  ].map(h => (
                     <th key={h} style={thStyle}>{h}</th>
                   ))}
+                  {/* P&L with eye toggle */}
+                  <th style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }}>
+                    <span
+                      onClick={() => setShowPL(v => !v)}
+                      title={showPL ? 'הסתר P&L' : 'הצג P&L'}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer' }}
+                    >
+                      P&L נטו
+                      {showPL ? <Eye size={13} color="#0ea5e9" /> : <EyeOff size={13} color="#475569" />}
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {periodStats.map((row, i) => {
                   const isProfit = row.netPL >= 0;
                   return (
-                    <tr key={i} style={{ borderBottom: '1px solid rgba(71,85,105,0.2)', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.3)' }}>
-                      <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 600 }}>{row.period}</td>
+                    <tr
+                      key={i}
+                      style={{
+                        borderBottom: '1px solid rgba(71,85,105,0.2)',
+                        backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.3)',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setSelectedPeriod(row)}
+                      onMouseEnter={(e) => (e.currentTarget as HTMLTableRowElement).style.backgroundColor = 'rgba(14,165,233,0.06)'}
+                      onMouseLeave={(e) => (e.currentTarget as HTMLTableRowElement).style.backgroundColor = i % 2 === 0 ? 'transparent' : 'rgba(15,23,42,0.3)'}
+                    >
+                      <td style={{ padding: '10px 12px', color: '#0ea5e9', fontWeight: 600, textDecoration: 'underline dotted' }}>{row.period}</td>
                       <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{row.count}</td>
                       <td style={{ padding: '10px 12px', color: row.winRate >= 50 ? '#22c55e' : '#f59e0b', fontWeight: 600 }}>
                         {row.winRate.toFixed(1)}%
                       </td>
-                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 700 }}>
-                        {formatCurrency(row.netPL)}
-                      </td>
-                      <td style={{ padding: '10px 12px', color: '#f59e0b' }}>{formatCurrency(row.commissions)}</td>
                       {riskUnitValue > 0 && (
                         <td style={{ padding: '10px 12px', color: row.riskUnits >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
                           {(row.riskUnits >= 0 ? '+' : '') + row.riskUnits.toFixed(2)}R
@@ -273,6 +466,10 @@ export default function Statistics({ data, onView }: StatisticsProps) {
                       </td>
                       <td style={{ padding: '10px 12px', color: '#22c55e' }}>{formatCurrency(row.bestTrade)}</td>
                       <td style={{ padding: '10px 12px', color: '#ef4444' }}>{formatCurrency(row.worstTrade)}</td>
+                      <td style={{ padding: '10px 12px', color: '#f59e0b' }}>{formatCurrency(row.commissions)}</td>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 700, filter: showPL ? 'none' : 'blur(6px)', userSelect: showPL ? 'auto' : 'none' }}>
+                        {formatCurrency(row.netPL)}
+                      </td>
                     </tr>
                   );
                 })}

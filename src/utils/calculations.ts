@@ -2,6 +2,7 @@ import type { Trade, AppData } from '../types/trade';
 
 export interface PeriodStats {
   period: string;
+  tradeIds: string[];
   count: number;
   wins: number;
   winRate: number;
@@ -32,6 +33,7 @@ function buildPeriodStats(trades: Trade[], period: string, riskUnitValue: number
   const rrs = trades.map(t => t.rr).filter(r => r !== 0 && isFinite(r));
   return {
     period,
+    tradeIds: trades.map(t => t.id),
     count: trades.length,
     wins,
     winRate: trades.length ? (wins / trades.length) * 100 : 0,

@@ -74,7 +74,8 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
   const [loadingPrices, setLoadingPrices] = useState(false);
   const [showFinnhubInput, setShowFinnhubInput] = useState(false);
   const [finnhubKeyInput, setFinnhubKeyInput] = useState('');
-  const hasFinnhubKey = !!localStorage.getItem(FINNHUB_KEY_STORAGE);
+  const [hasFinnhubKey, setHasFinnhubKey] = useState(() => !!localStorage.getItem(FINNHUB_KEY_STORAGE));
+  const [priceStatus, setPriceStatus] = useState<string | null>(null);
 
   const fetchOpenPrices = useCallback(async () => {
     if (openPositions.length === 0) return;
@@ -88,10 +89,13 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
           const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${pos.stockName.toUpperCase()}&token=${apiKey}`);
           const json = await res.json();
           if (json.c && json.c > 0) result[pos.id] = json.c;
+          else if (json.error) setPriceStatus(`שגיאה: ${json.error}`);
         } catch { /* ignore single symbol error */ }
         await new Promise(r => setTimeout(r, 300));
       }
       setOpenPrices(result);
+      const found = Object.keys(result).length;
+      setPriceStatus(found > 0 ? `עודכנו ${found} מניות` : 'לא נמצאו מחירים — בדוק API Key');
     } finally {
       setLoadingPrices(false);
     }
@@ -405,14 +409,28 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
               </h2>
               <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>P&L לא ממומש — לפי מחיר שוק נוכחי</p>
             </div>
-            <button
-              onClick={fetchOpenPrices}
-              disabled={loadingPrices}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(71,85,105,0.2)', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.4)', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: loadingPrices ? 'default' : 'pointer', opacity: loadingPrices ? 0.6 : 1 }}
-            >
-              <RefreshCw size={13} />
-              {loadingPrices ? 'טוען...' : 'רענן מחירים'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {priceStatus && (
+                <span style={{ fontSize: '12px', color: priceStatus.startsWith('שגיאה') || priceStatus.includes('בדוק') ? '#ef4444' : '#22c55e' }}>
+                  {priceStatus}
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  if (!localStorage.getItem(FINNHUB_KEY_STORAGE)) {
+                    setShowFinnhubInput(true);
+                  } else {
+                    setPriceStatus(null);
+                    fetchOpenPrices();
+                  }
+                }}
+                disabled={loadingPrices}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(71,85,105,0.2)', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.4)', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: loadingPrices ? 'default' : 'pointer', opacity: loadingPrices ? 0.6 : 1 }}
+              >
+                <RefreshCw size={13} />
+                {loadingPrices ? 'טוען...' : 'רענן מחירים'}
+              </button>
+            </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
@@ -490,6 +508,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && finnhubKeyInput.trim()) {
                     localStorage.setItem(FINNHUB_KEY_STORAGE, finnhubKeyInput.trim());
+                    setHasFinnhubKey(true);
                     setShowFinnhubInput(false);
                     setFinnhubKeyInput('');
                     fetchOpenPrices();
@@ -501,6 +520,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                 onClick={() => {
                   if (finnhubKeyInput.trim()) {
                     localStorage.setItem(FINNHUB_KEY_STORAGE, finnhubKeyInput.trim());
+                    setHasFinnhubKey(true);
                     setShowFinnhubInput(false);
                     setFinnhubKeyInput('');
                     fetchOpenPrices();

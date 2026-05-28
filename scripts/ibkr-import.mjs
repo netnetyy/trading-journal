@@ -107,7 +107,7 @@ function parseAttrString(attrStr) {
 }
 
 function parseExecutions(xml) {
-  const orderRe = /<Order\s([^>]+?)\/>/g;
+  const orderRe = /<Trade\s([^>]+?)\/>/g;
   const results = [];
   let m;
   while ((m = orderRe.exec(xml)) !== null) {

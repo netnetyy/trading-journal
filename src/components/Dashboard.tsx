@@ -72,6 +72,9 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
   // Open positions: current prices + unrealized P&L
   const [openPrices, setOpenPrices] = useState<Record<string, number>>({});
   const [loadingPrices, setLoadingPrices] = useState(false);
+  const [showFinnhubInput, setShowFinnhubInput] = useState(false);
+  const [finnhubKeyInput, setFinnhubKeyInput] = useState('');
+  const hasFinnhubKey = !!localStorage.getItem(FINNHUB_KEY_STORAGE);
 
   const fetchOpenPrices = useCallback(async () => {
     if (openPositions.length === 0) return;
@@ -461,10 +464,53 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
               </tbody>
             </table>
           </div>
-          {!localStorage.getItem(FINNHUB_KEY_STORAGE) && (
-            <p style={{ fontSize: '12px', color: '#475569', marginTop: '12px', marginBottom: 0 }}>
-              להצגת P&L לא ממומש, הוסף Finnhub API Key בדף השקעות לטווח ארוך
-            </p>
+          {!hasFinnhubKey && !showFinnhubInput && (
+            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', color: '#475569' }}>להצגת מחיר חי נדרש Finnhub API Key</span>
+              <button
+                onClick={() => setShowFinnhubInput(true)}
+                style={{ fontSize: '12px', color: '#0ea5e9', background: 'none', border: '1px solid rgba(14,165,233,0.4)', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}
+              >
+                הוסף מפתח
+              </button>
+            </div>
+          )}
+          {showFinnhubInput && (
+            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={finnhubKeyInput}
+                onChange={(e) => setFinnhubKeyInput(e.target.value)}
+                placeholder="Finnhub API Key"
+                style={{ ...inputStyle, maxWidth: '280px', direction: 'ltr' }}
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && finnhubKeyInput.trim()) {
+                    localStorage.setItem(FINNHUB_KEY_STORAGE, finnhubKeyInput.trim());
+                    setShowFinnhubInput(false);
+                    setFinnhubKeyInput('');
+                    fetchOpenPrices();
+                  }
+                  if (e.key === 'Escape') setShowFinnhubInput(false);
+                }}
+              />
+              <button
+                onClick={() => {
+                  if (finnhubKeyInput.trim()) {
+                    localStorage.setItem(FINNHUB_KEY_STORAGE, finnhubKeyInput.trim());
+                    setShowFinnhubInput(false);
+                    setFinnhubKeyInput('');
+                    fetchOpenPrices();
+                  }
+                }}
+                style={{ backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer' }}
+              >
+                שמור
+              </button>
+              <button onClick={() => setShowFinnhubInput(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={14} />
+              </button>
+            </div>
           )}
         </div>
       )}

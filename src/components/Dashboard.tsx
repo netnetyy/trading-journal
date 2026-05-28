@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   AreaChart,
   Area,
@@ -58,8 +58,8 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddDeposit, onDeleteDeposit, onSetRiskUnit, onSetDefaultCommission }: DashboardProps) {
-  const closedTrades = data.trades.filter(isClosedTrade);
-  const openPositions = data.trades.filter(t => t.status === 'open');
+  const closedTrades = useMemo(() => data.trades.filter(isClosedTrade), [data.trades]);
+  const openPositions = useMemo(() => data.trades.filter(t => t.status === 'open'), [data.trades]);
   const portfolioValue = getPortfolioValue(data);
   const totalPL = getTotalNetProfitLoss(closedTrades);
   const winRate = getWinRate(closedTrades);
@@ -82,16 +82,19 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
     if (!apiKey) return;
     setLoadingPrices(true);
     const result: Record<string, number> = {};
-    for (const pos of openPositions) {
-      try {
-        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${pos.stockName.toUpperCase()}&token=${apiKey}`);
-        const json = await res.json();
-        if (json.c && json.c > 0) result[pos.id] = json.c;
-      } catch { /* ignore */ }
-      await new Promise(r => setTimeout(r, 300));
+    try {
+      for (const pos of openPositions) {
+        try {
+          const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${pos.stockName.toUpperCase()}&token=${apiKey}`);
+          const json = await res.json();
+          if (json.c && json.c > 0) result[pos.id] = json.c;
+        } catch { /* ignore single symbol error */ }
+        await new Promise(r => setTimeout(r, 300));
+      }
+      setOpenPrices(result);
+    } finally {
+      setLoadingPrices(false);
     }
-    setOpenPrices(result);
-    setLoadingPrices(false);
   }, [openPositions]);
 
   useEffect(() => { fetchOpenPrices(); }, [fetchOpenPrices]);

@@ -161,6 +161,7 @@ function migrate(parsed: AppData): AppData {
       entryReason: t.entryReason ?? '',
       exitReason: t.exitReason ?? '',
       conclusions: t.conclusions ?? '',
+      status: t.status ?? 'closed',
     }));
   }
   return parsed;

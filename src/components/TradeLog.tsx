@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { AppData } from '../types/trade';
-import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits } from '../utils/calculations';
+import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits, isClosedTrade } from '../utils/calculations';
 import { Edit2, Trash2, Search, ChevronUp, ChevronDown, Eye } from 'lucide-react';
 
 interface TradeLogProps {
@@ -17,6 +17,7 @@ type SortDir = 'asc' | 'desc';
 export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: TradeLogProps) {
   const trades = data.trades;
   const [filter, setFilter] = useState<'all' | 'long' | 'short'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('all');
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -26,6 +27,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
 
   const filtered = trades
     .filter((t) => filter === 'all' || t.type === filter)
+    .filter((t) => statusFilter === 'all' || (statusFilter === 'open' ? t.status === 'open' : isClosedTrade(t)))
     .filter((t) => !search || t.stockName.toLowerCase().includes(search.toLowerCase()))
     .filter((t) => !dateFrom || t.date >= dateFrom)
     .filter((t) => !dateTo || t.date <= dateTo)
@@ -136,6 +138,29 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
           ))}
         </div>
 
+        {/* Status Filter */}
+        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0f172a', borderRadius: '8px', padding: '3px' }}>
+          {(['all', 'closed', 'open'] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: '6px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 500,
+                backgroundColor: statusFilter === f ? (f === 'open' ? '#d97706' : '#0284c7') : 'transparent',
+                color: statusFilter === f ? 'white' : '#64748b',
+                transition: 'all 0.15s',
+              }}
+            >
+              {f === 'all' ? 'הכל' : f === 'closed' ? 'סגורות' : 'פתוחות'}
+            </button>
+          ))}
+        </div>
+
         {/* Search */}
         <div style={{ position: 'relative', flex: 1, minWidth: '160px' }}>
           <Search size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
@@ -156,9 +181,9 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={inputStyle} />
         </div>
 
-        {(search || dateFrom || dateTo || filter !== 'all') && (
+        {(search || dateFrom || dateTo || filter !== 'all' || statusFilter !== 'all') && (
           <button
-            onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setFilter('all'); }}
+            onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setFilter('all'); setStatusFilter('all'); }}
             style={{ ...inputStyle, cursor: 'pointer', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
           >
             נקה פילטרים
@@ -224,6 +249,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
             </thead>
             <tbody>
               {filtered.map((trade, idx) => {
+                const isOpen = trade.status === 'open';
                 const netPL = getNetProfitLoss(trade);
                 const isProfit = netPL >= 0;
                 const isDeleting = confirmDelete === trade.id;
@@ -232,7 +258,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                     key={trade.id}
                     style={{
                       borderBottom: '1px solid rgba(71,85,105,0.2)',
-                      backgroundColor: isProfit ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
+                      backgroundColor: trade.status === 'open' ? 'rgba(217,119,6,0.06)' : isProfit ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
                       cursor: 'pointer',
                     }}
                     onClick={() => onView(trade.id)}
@@ -242,7 +268,15 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                       {formatDate(trade.date)}
                     </td>
                     <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 700, fontSize: '14px' }}>
-                      {trade.stockName}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {trade.stockName}
+                        {trade.status === 'open' && (
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: '#d97706', backgroundColor: 'rgba(217,119,6,0.15)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.3)' }}>פתוחה</span>
+                        )}
+                        {trade.ibkrImported && (
+                          <span style={{ fontSize: '10px', color: '#64748b' }}>IBKR</span>
+                        )}
+                      </span>
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <span
@@ -265,32 +299,32 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                       {trade.totalShares.toLocaleString()}
                     </td>
                     <td
-                      style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 700 }}
-                      title={`גולמי: ${formatCurrency(trade.totalProfitLoss)} | עמלות: ${formatCurrency(trade.commissions ?? 0)}`}
+                      style={{ padding: '10px 12px', color: isOpen ? '#64748b' : isProfit ? '#22c55e' : '#ef4444', fontWeight: 700 }}
+                      title={isOpen ? 'פוזיציה פתוחה — אין P&L ממומש' : `גולמי: ${formatCurrency(trade.totalProfitLoss)} | עמלות: ${formatCurrency(trade.commissions ?? 0)}`}
                     >
-                      {formatCurrency(netPL)}
+                      {isOpen ? '—' : formatCurrency(netPL)}
                     </td>
-                    <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>
-                      {formatPercent(trade.totalProfitLossPercent)}
+                    <td style={{ padding: '10px 12px', color: isOpen ? '#64748b' : isProfit ? '#22c55e' : '#ef4444' }}>
+                      {isOpen ? '—' : formatPercent(trade.totalProfitLossPercent)}
                     </td>
                     <td
                       style={{
                         padding: '10px 12px',
-                        color: isProfit ? '#86efac' : '#fca5a5',
+                        color: isOpen ? '#64748b' : isProfit ? '#86efac' : '#fca5a5',
                         fontWeight: 600,
                       }}
-                      title="אחוז מגודל התיק הכולל בזמן העסקה"
+                      title={isOpen ? 'פוזיציה פתוחה' : 'אחוז מגודל התיק הכולל בזמן העסקה'}
                     >
-                      {formatPercent(getPLPercentOfPortfolio(data, trade))}
+                      {isOpen ? '—' : formatPercent(getPLPercentOfPortfolio(data, trade))}
                     </td>
-                    <td style={{ padding: '10px 12px', color: trade.rr >= 1 ? '#22c55e' : trade.rr >= 0 ? '#f59e0b' : '#ef4444' }}>
-                      {trade.rr.toFixed(2)}
+                    <td style={{ padding: '10px 12px', color: isOpen ? '#64748b' : trade.rr >= 1 ? '#22c55e' : trade.rr >= 0 ? '#f59e0b' : '#ef4444' }}>
+                      {isOpen ? '—' : trade.rr.toFixed(2)}
                     </td>
                     {data.riskUnitValue > 0 && (() => {
                       const ru = getRiskUnits(trade, data.riskUnitValue);
                       return (
-                        <td style={{ padding: '10px 12px', color: ru >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
-                          {(ru >= 0 ? '+' : '') + ru.toFixed(2)}R
+                        <td style={{ padding: '10px 12px', color: isOpen ? '#64748b' : ru >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                          {isOpen ? '—' : (ru >= 0 ? '+' : '') + ru.toFixed(2) + 'R'}
                         </td>
                       );
                     })()}

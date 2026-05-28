@@ -14,6 +14,10 @@ export interface PeriodStats {
   riskUnits: number;
 }
 
+export function isClosedTrade(t: Trade): boolean {
+  return !t.status || t.status === 'closed';
+}
+
 export function getNetProfitLoss(trade: Trade): number {
   return trade.totalProfitLoss - (trade.commissions ?? 0);
 }
@@ -49,7 +53,7 @@ function buildPeriodStats(trades: Trade[], period: string, riskUnitValue: number
 export function getMonthlyStats(data: AppData): PeriodStats[] {
   const riskUnitValue = data.riskUnitValue ?? 100;
   const byMonth = new Map<string, Trade[]>();
-  for (const t of data.trades) {
+  for (const t of data.trades.filter(isClosedTrade)) {
     const [y, m] = t.date.split('-');
     const key = `${y}-${m}`;
     if (!byMonth.has(key)) byMonth.set(key, []);
@@ -67,7 +71,7 @@ export function getMonthlyStats(data: AppData): PeriodStats[] {
 export function getYearlyStats(data: AppData): PeriodStats[] {
   const riskUnitValue = data.riskUnitValue ?? 100;
   const byYear = new Map<string, Trade[]>();
-  for (const t of data.trades) {
+  for (const t of data.trades.filter(isClosedTrade)) {
     const y = t.date.split('-')[0];
     if (!byYear.has(y)) byYear.set(y, []);
     byYear.get(y)!.push(t);
@@ -78,7 +82,7 @@ export function getYearlyStats(data: AppData): PeriodStats[] {
 }
 
 export function getPortfolioValue(data: AppData): number {
-  return data.portfolioBaseValue + getTotalNetProfitLoss(data.trades);
+  return data.portfolioBaseValue + getTotalNetProfitLoss(data.trades.filter(isClosedTrade));
 }
 
 export function getTotalNetProfitLoss(trades: Trade[]): number {
@@ -88,6 +92,7 @@ export function getTotalNetProfitLoss(trades: Trade[]): number {
 // Portfolio value just before the given trade executed (chronological)
 export function getPortfolioValueAtTrade(data: AppData, trade: Trade): number {
   const priorPL = data.trades
+    .filter(isClosedTrade)
     .filter((t) => t.date < trade.date || (t.date === trade.date && t.createdAt < trade.createdAt))
     .reduce((sum, t) => sum + getNetProfitLoss(t), 0);
   return data.portfolioBaseValue + priorPL;
@@ -114,11 +119,11 @@ export function getEquityCurve(data: AppData): { date: string; value: number; la
   const totalDeposits = data.deposits.reduce((s, d) => s + d.amount, 0);
   const initialBase = data.portfolioBaseValue - totalDeposits; // base before tracked deposits
 
-  // Build a unified event list: deposits + trades, sorted by date
+  // Build a unified event list: deposits + closed trades, sorted by date
   type Event = { date: string; delta: number; kind: 'deposit' | 'trade' };
   const events: Event[] = [
     ...data.deposits.map((d) => ({ date: d.date, delta: d.amount, kind: 'deposit' as const })),
-    ...data.trades.map((t) => ({ date: t.date, delta: getNetProfitLoss(t), kind: 'trade' as const })),
+    ...data.trades.filter(isClosedTrade).map((t) => ({ date: t.date, delta: getNetProfitLoss(t), kind: 'trade' as const })),
   ].sort((a, b) => a.date.localeCompare(b.date));
 
   if (events.length === 0) return [];
@@ -152,9 +157,9 @@ export function getEquityCurve(data: AppData): { date: string; value: number; la
   return curve;
 }
 
-// Chart 2: cumulative P&L from trades only (no deposits)
+// Chart 2: cumulative P&L from closed trades only (no deposits, no open positions)
 export function getPLCurve(data: AppData): { date: string; value: number }[] {
-  const sorted = [...data.trades].sort((a, b) => a.date.localeCompare(b.date));
+  const sorted = [...data.trades.filter(isClosedTrade)].sort((a, b) => a.date.localeCompare(b.date));
   if (sorted.length === 0) return [];
 
   // Aggregate same-date trades into one point to avoid Recharts tooltip confusion

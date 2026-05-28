@@ -40,6 +40,8 @@ export interface Trade {
   notes: string;
   behavioralTags: string[];
   createdAt: string;
+  status?: 'open' | 'closed'; // undefined = closed (backward-compat)
+  ibkrImported?: boolean;
 }
 
 export interface PortfolioDeposit {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   AreaChart,
   Area,
@@ -20,8 +20,11 @@ import {
   formatPercent,
   formatDate,
   getNetProfitLoss,
+  isClosedTrade,
 } from '../utils/calculations';
-import { TrendingUp, TrendingDown, Activity, DollarSign, Percent, Hash, Edit2, Plus, Trash2, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, DollarSign, Percent, Hash, Edit2, Plus, Trash2, X, RefreshCw } from 'lucide-react';
+
+const FINNHUB_KEY_STORAGE = 'finnhub_api_key';
 
 interface DashboardProps {
   data: AppData;
@@ -55,14 +58,40 @@ const inputStyle: React.CSSProperties = {
 };
 
 export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddDeposit, onDeleteDeposit, onSetRiskUnit, onSetDefaultCommission }: DashboardProps) {
+  const closedTrades = data.trades.filter(isClosedTrade);
+  const openPositions = data.trades.filter(t => t.status === 'open');
   const portfolioValue = getPortfolioValue(data);
-  const totalPL = getTotalNetProfitLoss(data.trades);
-  const winRate = getWinRate(data.trades);
+  const totalPL = getTotalNetProfitLoss(closedTrades);
+  const winRate = getWinRate(closedTrades);
   const equityCurve = getEquityCurve(data);
   const plCurve = getPLCurve(data);
-  const recentTrades = [...data.trades]
+  const recentTrades = [...closedTrades]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
+
+  // Open positions: current prices + unrealized P&L
+  const [openPrices, setOpenPrices] = useState<Record<string, number>>({});
+  const [loadingPrices, setLoadingPrices] = useState(false);
+
+  const fetchOpenPrices = useCallback(async () => {
+    if (openPositions.length === 0) return;
+    const apiKey = localStorage.getItem(FINNHUB_KEY_STORAGE);
+    if (!apiKey) return;
+    setLoadingPrices(true);
+    const result: Record<string, number> = {};
+    for (const pos of openPositions) {
+      try {
+        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${pos.stockName.toUpperCase()}&token=${apiKey}`);
+        const json = await res.json();
+        if (json.c && json.c > 0) result[pos.id] = json.c;
+      } catch { /* ignore */ }
+      await new Promise(r => setTimeout(r, 300));
+    }
+    setOpenPrices(result);
+    setLoadingPrices(false);
+  }, [openPositions]);
+
+  useEffect(() => { fetchOpenPrices(); }, [fetchOpenPrices]);
 
   // Edit portfolio modal state
   const [showEditPortfolio, setShowEditPortfolio] = useState(false);
@@ -123,15 +152,15 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
     {
       title: 'אחוז הצלחה',
       value: winRate.toFixed(1) + '%',
-      sub: `${data.trades.filter((t) => t.totalProfitLoss > 0).length} מתוך ${data.trades.length}`,
+      sub: `${closedTrades.filter((t) => t.totalProfitLoss > 0).length} מתוך ${closedTrades.length}`,
       icon: Percent,
       color: winRate >= 50 ? '#22c55e' : '#f59e0b',
       bg: winRate >= 50 ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
     },
     {
-      title: 'מספר עסקאות',
-      value: data.trades.length.toString(),
-      sub: `${data.trades.filter((t) => t.type === 'long').length} לונג | ${data.trades.filter((t) => t.type === 'short').length} שורט`,
+      title: 'עסקאות סגורות',
+      value: closedTrades.length.toString(),
+      sub: `${closedTrades.filter((t) => t.type === 'long').length} לונג | ${closedTrades.filter((t) => t.type === 'short').length} שורט`,
       icon: Hash,
       color: '#facc15',
       bg: 'rgba(250,204,21,0.1)',
@@ -359,6 +388,87 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
         )}
       </div>
 
+      {/* Open Positions Card */}
+      {openPositions.length > 0 && (
+        <div style={{ ...card(), marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div>
+              <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>
+                פוזיציות פתוחות
+                <span style={{ marginRight: '8px', fontSize: '12px', fontWeight: 600, color: '#d97706', backgroundColor: 'rgba(217,119,6,0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.3)' }}>{openPositions.length}</span>
+              </h2>
+              <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>P&L לא ממומש — לפי מחיר שוק נוכחי</p>
+            </div>
+            <button
+              onClick={fetchOpenPrices}
+              disabled={loadingPrices}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(71,85,105,0.2)', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.4)', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: loadingPrices ? 'default' : 'pointer', opacity: loadingPrices ? 0.6 : 1 }}
+            >
+              <RefreshCw size={13} />
+              {loadingPrices ? 'טוען...' : 'רענן מחירים'}
+            </button>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(71,85,105,0.4)' }}>
+                  {['מניה', 'סוג', 'כמות', 'כניסה ממוצעת', 'מחיר נוכחי', 'P&L לא ממומש', '%'].map((h) => (
+                    <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 500, textAlign: 'right' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {openPositions.map((pos) => {
+                  const currentPrice = openPrices[pos.id];
+                  const unrealizedPL = currentPrice
+                    ? pos.type === 'long'
+                      ? (currentPrice - pos.avgEntryPrice) * pos.totalShares
+                      : (pos.avgEntryPrice - currentPrice) * pos.totalShares
+                    : null;
+                  const unrealizedPct = unrealizedPL !== null && pos.totalInvested > 0
+                    ? (unrealizedPL / pos.totalInvested) * 100
+                    : null;
+                  const isGain = unrealizedPL !== null && unrealizedPL >= 0;
+                  return (
+                    <tr
+                      key={pos.id}
+                      style={{ borderBottom: '1px solid rgba(71,85,105,0.2)', backgroundColor: unrealizedPL !== null ? (isGain ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)') : 'rgba(217,119,6,0.04)', cursor: 'pointer' }}
+                      onClick={() => onNavigate('edit-trade', pos.id)}
+                    >
+                      <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 700 }}>
+                        {pos.stockName}
+                        {pos.ibkrImported && <span style={{ marginRight: '6px', fontSize: '10px', color: '#64748b' }}>IBKR</span>}
+                      </td>
+                      <td style={{ padding: '10px 12px' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: pos.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: pos.type === 'long' ? '#22c55e' : '#ef4444' }}>
+                          {pos.type === 'long' ? 'לונג' : 'שורט'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{pos.totalShares.toLocaleString()}</td>
+                      <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{formatCurrency(pos.avgEntryPrice)}</td>
+                      <td style={{ padding: '10px 12px', color: currentPrice ? '#f1f5f9' : '#475569' }}>
+                        {currentPrice ? formatCurrency(currentPrice) : '—'}
+                      </td>
+                      <td style={{ padding: '10px 12px', color: unrealizedPL !== null ? (isGain ? '#22c55e' : '#ef4444') : '#475569', fontWeight: unrealizedPL !== null ? 700 : 400 }}>
+                        {unrealizedPL !== null ? formatCurrency(unrealizedPL) : '—'}
+                      </td>
+                      <td style={{ padding: '10px 12px', color: unrealizedPct !== null ? (isGain ? '#22c55e' : '#ef4444') : '#475569' }}>
+                        {unrealizedPct !== null ? formatPercent(unrealizedPct) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {!localStorage.getItem(FINNHUB_KEY_STORAGE) && (
+            <p style={{ fontSize: '12px', color: '#475569', marginTop: '12px', marginBottom: 0 }}>
+              להצגת P&L לא ממומש, הוסף Finnhub API Key בדף השקעות לטווח ארוך
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Two columns: Recent Trades + Deposits */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
 
@@ -396,8 +506,12 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                           {trade.type === 'long' ? 'לונג' : 'שורט'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 600 }}>{formatCurrency(netPL)}</td>
-                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(trade.totalProfitLossPercent)}</td>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                        {formatCurrency(netPL)}
+                      </td>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>
+                        {formatPercent(trade.totalProfitLossPercent)}
+                      </td>
                     </tr>
                   );
                 })}

@@ -60,6 +60,7 @@ async function fetchFlexReport() {
 
   const refCode = extractAttr(reqText, 'ReferenceCode');
   if (!refCode) {
+    console.log('IBKR raw response:', reqText.slice(0, 500));
     const status = extractAttr(reqText, 'Status') || reqText.slice(0, 200);
     throw new Error(`IBKR request failed: ${status}`);
   }

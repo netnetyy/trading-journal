@@ -354,15 +354,24 @@ async function main() {
   console.log('Time (UTC):', new Date().toISOString());
   if (DRY_RUN) console.log('DRY RUN MODE — no data will be saved');
 
-  if (!IBKR_FLEX_TOKEN || !IBKR_FLEX_QUERY_ID) {
+  const LOCAL_XML_FILE = process.env.LOCAL_XML_FILE;
+
+  if (!LOCAL_XML_FILE && (!IBKR_FLEX_TOKEN || !IBKR_FLEX_QUERY_ID)) {
     throw new Error('Missing IBKR_FLEX_TOKEN or IBKR_FLEX_QUERY_ID');
   }
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY');
   }
 
-  // 1. Fetch XML from IBKR
-  const xml = await fetchFlexReport();
+  // 1. Fetch XML from IBKR (or read from local file)
+  let xml;
+  if (LOCAL_XML_FILE) {
+    const { readFileSync } = await import('fs');
+    xml = readFileSync(LOCAL_XML_FILE, 'utf8');
+    console.log('Reading from local file:', LOCAL_XML_FILE);
+  } else {
+    xml = await fetchFlexReport();
+  }
 
   // 2. Parse executions
   const executions = parseExecutions(xml);

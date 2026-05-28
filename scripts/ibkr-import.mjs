@@ -60,9 +60,10 @@ async function fetchFlexReport() {
 
   const refCode = extractAttr(reqText, 'ReferenceCode');
   if (!refCode) {
-    console.log('IBKR raw response:', reqText.slice(0, 500));
     const status = extractAttr(reqText, 'Status') || reqText.slice(0, 200);
-    throw new Error(`IBKR request failed: ${status}`);
+    const errorCode = extractAttr(reqText, 'ErrorCode') || '';
+    const errorMsg = extractAttr(reqText, 'ErrorMessage') || '';
+    throw new Error(`IBKR request failed: ${status} (${errorCode}: ${errorMsg})`);
   }
   console.log(`Got reference code: ${refCode}`);
 
@@ -142,11 +143,7 @@ function parseExecutions(xml) {
   // Sort by time ascending
   results.sort((a, b) => a.timeISO.localeCompare(b.timeISO));
   console.log(`Parsed ${results.length} STK/USD executions from IBKR`);
-  if (results.length === 0) {
-    const sample = xml.slice(xml.indexOf('<FlexStatement'), xml.indexOf('<FlexStatement') + 2000);
-    console.log('XML sample (first 2000 chars from FlexStatement):', sample);
-  }
-  return results;
+return results;
 }
 
 // ── Position Lifecycle Tracking ───────────────────────────────────────────────

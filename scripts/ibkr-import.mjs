@@ -2,6 +2,8 @@
 // Runs via GitHub Actions every weekday night (00:30 Israel time)
 // Fetches closed + open positions from IBKR and merges into Supabase app_state row id=1
 
+class Flex1001Error extends Error {}
+
 const IBKR_FLEX_TOKEN = process.env.IBKR_FLEX_TOKEN;
 const IBKR_FLEX_QUERY_ID = process.env.IBKR_FLEX_QUERY_ID;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -52,19 +54,42 @@ async function supabaseSave(data) {
 async function fetchFlexReport() {
   console.log('Requesting IBKR Flex report...');
 
-  // Step 1: request report generation
-  const reqRes = await fetch(
-    `${IBKR_REQUEST_URL}?t=${IBKR_FLEX_TOKEN}&q=${IBKR_FLEX_QUERY_ID}&v=3`
-  );
-  const reqText = await reqRes.text();
+  // Step 1: request report generation (retry up to 5x on error 1001)
+  const STEP1_MAX_ATTEMPTS = 5;
+  const STEP1_RETRY_DELAY_MS = 30_000;
+  let refCode = null;
 
-  const refCode = extractAttr(reqText, 'ReferenceCode');
-  if (!refCode) {
-    const status = extractAttr(reqText, 'Status') || reqText.slice(0, 200);
+  for (let attempt = 1; attempt <= STEP1_MAX_ATTEMPTS; attempt++) {
+    if (attempt > 1) {
+      console.log(`Step 1 retry ${attempt}/${STEP1_MAX_ATTEMPTS} — waiting ${STEP1_RETRY_DELAY_MS / 1000}s...`);
+      await new Promise(r => setTimeout(r, STEP1_RETRY_DELAY_MS));
+    }
+
+    const reqRes = await fetch(
+      `${IBKR_REQUEST_URL}?t=${IBKR_FLEX_TOKEN}&q=${IBKR_FLEX_QUERY_ID}&v=3`
+    );
+    const reqText = await reqRes.text();
+
+    refCode = extractAttr(reqText, 'ReferenceCode');
+    if (refCode) break;
+
+    const status = extractAttr(reqText, 'Status') || '';
     const errorCode = extractAttr(reqText, 'ErrorCode') || '';
     const errorMsg = extractAttr(reqText, 'ErrorMessage') || '';
-    throw new Error(`IBKR request failed: ${status} (${errorCode}: ${errorMsg})`);
+    console.log(`IBKR Step 1 response: Status="${status}", ErrorCode="${errorCode}", Message="${errorMsg}"`);
+
+    if (errorCode !== '1001') {
+      throw new Error(`IBKR request failed: ${status} (${errorCode}: ${errorMsg})`);
+    }
+
+    if (attempt === STEP1_MAX_ATTEMPTS) {
+      throw new Flex1001Error(
+        `IBKR returned 1001 for ${STEP1_MAX_ATTEMPTS} consecutive attempts. ` +
+        'Token may have expired — log into IBKR → Account Management → Flex Web Service → regenerate token → update GitHub Secret IBKR_FLEX_TOKEN.'
+      );
+    }
   }
+
   console.log(`Got reference code: ${refCode}`);
 
   // Step 2: poll until report is ready (max 30 seconds)
@@ -409,6 +434,10 @@ async function main() {
 }
 
 main().catch((err) => {
+  if (err instanceof Flex1001Error) {
+    console.warn('⚠️  ' + err.message);
+    process.exit(0);
+  }
   console.error('Error:', err.message);
   process.exit(1);
 });

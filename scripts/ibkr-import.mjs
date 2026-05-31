@@ -359,8 +359,28 @@ function mergeIntoAppData(appData, ibkrTrades) {
       };
       updatedCount++;
       console.log(`  ✓ Closed trade: ${ibkrTrade.stockName} (${ibkrTrade.date}) P&L: ${ibkrTrade.totalProfitLoss}`);
+    } else if (trades[existingIdx].status === 'open' && ibkrTrade.status === 'open') {
+      // Still open — sync exits/shares in case of partial sell or position add
+      const prevExits = (trades[existingIdx].exits || []).length;
+      const newExits = (ibkrTrade.exits || []).length;
+      const sharesChanged = trades[existingIdx].totalShares !== ibkrTrade.totalShares;
+      if (newExits !== prevExits || sharesChanged) {
+        trades[existingIdx] = {
+          ...trades[existingIdx],
+          exits: ibkrTrade.exits,
+          totalShares: ibkrTrade.totalShares,
+          avgEntryPrice: ibkrTrade.avgEntryPrice,
+          totalInvested: ibkrTrade.totalInvested,
+          totalProfitLoss: ibkrTrade.totalProfitLoss,
+          totalProfitLossPercent: ibkrTrade.totalProfitLossPercent,
+          commissions: ibkrTrade.commissions,
+          reinforcements: ibkrTrade.reinforcements,
+        };
+        updatedCount++;
+        console.log(`  ~ Updated open position: ${ibkrTrade.stockName} (exits: ${prevExits}→${newExits}, shares: ${ibkrTrade.totalShares})`);
+      }
     }
-    // else: already exists as closed → skip (preserve manual edits)
+    // else: already closed → skip (preserve manual edits)
   }
 
   if (newCount === 0 && updatedCount === 0) {

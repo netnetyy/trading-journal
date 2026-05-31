@@ -18,6 +18,11 @@ export function isClosedTrade(t: Trade): boolean {
   return !t.status || t.status === 'closed';
 }
 
+export function getOpenShares(t: Trade): number {
+  const sold = (t.exits ?? []).reduce((sum, e) => sum + (e.quantity ?? 0), 0);
+  return Math.max(0, t.totalShares - sold);
+}
+
 export function getNetProfitLoss(trade: Trade): number {
   return trade.totalProfitLoss - (trade.commissions ?? 0);
 }

@@ -383,7 +383,9 @@ function mergeIntoAppData(appData, ibkrTrades) {
           reinforcements: ibkrTrade.reinforcements,
         };
         updatedCount++;
-        console.log(`  ~ Updated open position: ${ibkrTrade.stockName} (exits: ${prevExits}→${newExits}, shares: ${ibkrTrade.totalShares})`);
+        const soldQty = ibkrTrade.exits.reduce((s, e) => s + e.quantity, 0);
+        const openQty = ibkrTrade.totalShares - soldQty;
+        console.log(`  ~ Updated open position: ${ibkrTrade.stockName} (exits: ${prevExits}→${newExits}, open: ${openQty}/${ibkrTrade.totalShares})`);
       }
     }
     // else: already closed → skip (preserve manual edits)

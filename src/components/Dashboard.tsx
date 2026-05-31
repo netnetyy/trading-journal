@@ -21,6 +21,7 @@ import {
   formatDate,
   getNetProfitLoss,
   isClosedTrade,
+  getOpenShares,
 } from '../utils/calculations';
 import { TrendingUp, TrendingDown, Activity, DollarSign, Percent, Hash, Edit2, Plus, Trash2, X, RefreshCw } from 'lucide-react';
 
@@ -444,10 +445,11 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
               <tbody>
                 {openPositions.map((pos) => {
                   const currentPrice = openPrices[pos.id];
+                  const openShares = getOpenShares(pos);
                   const unrealizedPL = currentPrice
                     ? pos.type === 'long'
-                      ? (currentPrice - pos.avgEntryPrice) * pos.totalShares
-                      : (pos.avgEntryPrice - currentPrice) * pos.totalShares
+                      ? (currentPrice - pos.avgEntryPrice) * openShares
+                      : (pos.avgEntryPrice - currentPrice) * openShares
                     : null;
                   const unrealizedPct = unrealizedPL !== null && pos.totalInvested > 0
                     ? (unrealizedPL / pos.totalInvested) * 100
@@ -468,7 +470,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                           {pos.type === 'long' ? 'לונג' : 'שורט'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{pos.totalShares.toLocaleString()}</td>
+                      <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{openShares.toLocaleString()}</td>
                       <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{formatCurrency(pos.avgEntryPrice)}</td>
                       <td style={{ padding: '10px 12px', color: currentPrice ? '#f1f5f9' : '#475569' }}>
                         {currentPrice ? formatCurrency(currentPrice) : '—'}

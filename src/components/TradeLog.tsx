@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { AppData } from '../types/trade';
-import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits, isClosedTrade } from '../utils/calculations';
+import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits, isClosedTrade, getOpenShares } from '../utils/calculations';
 import { Edit2, Trash2, Search, ChevronUp, ChevronDown, Eye } from 'lucide-react';
 
 interface TradeLogProps {
@@ -296,7 +296,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                       {formatCurrency(trade.avgEntryPrice)}
                     </td>
                     <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>
-                      {trade.totalShares.toLocaleString()}
+                      {(isOpen ? getOpenShares(trade) : trade.totalShares).toLocaleString()}
                     </td>
                     <td
                       style={{ padding: '10px 12px', color: isOpen ? '#64748b' : isProfit ? '#22c55e' : '#ef4444', fontWeight: 700 }}

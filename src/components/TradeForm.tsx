@@ -215,6 +215,8 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
       notes,
       behavioralTags,
       createdAt: existing?.createdAt ?? new Date().toISOString(),
+      status: existing?.status,
+      ibkrImported: existing?.ibkrImported,
     };
     onSave(trade);
   };

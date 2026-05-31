@@ -139,8 +139,14 @@ function parseExecutions(xml) {
   while ((m = orderRe.exec(xml)) !== null) {
     const attrs = parseAttrString(m[1]);
     // Only import US stocks
-    if (attrs.assetCategory !== 'STK' || attrs.currency !== 'USD') continue;
-    if (!attrs.symbol || !attrs.buySell || !attrs.quantity || !attrs.tradePrice) continue;
+    if (attrs.assetCategory !== 'STK' || attrs.currency !== 'USD') {
+      if (attrs.symbol) console.log(`  Skip ${attrs.symbol}: category=${attrs.assetCategory}, currency=${attrs.currency}`);
+      continue;
+    }
+    if (!attrs.symbol || !attrs.buySell || !attrs.quantity || !attrs.tradePrice) {
+      console.log(`  Skip incomplete: symbol=${attrs.symbol || '?'}, buySell=${attrs.buySell || '?'}`);
+      continue;
+    }
 
     const rawDate = attrs.tradeDate || '';
     const dateISO = rawDate.length === 8

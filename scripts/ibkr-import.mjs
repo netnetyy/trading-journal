@@ -447,17 +447,18 @@ async function main() {
   // 6. Merge
   const merged = mergeIntoAppData(appData, ibkrTrades);
   if (!merged) {
-    console.log('Nothing to save.');
-    return;
+    console.log('No trade changes — updating sync timestamp only.');
   }
 
-  // 7. Save
+  // 7. Save (always update ibkrLastSync so the UI reflects when sync ran)
+  const toSave = { ...(merged ?? appData), ibkrLastSync: new Date().toISOString() };
+
   if (DRY_RUN) {
-    console.log('DRY RUN: would save', merged.trades.length, 'total trades');
+    console.log('DRY RUN: would save', toSave.trades.length, 'total trades, ibkrLastSync:', toSave.ibkrLastSync);
     return;
   }
 
-  await supabaseSave(merged);
+  await supabaseSave(toSave);
   console.log('Saved to Supabase successfully.');
 }
 

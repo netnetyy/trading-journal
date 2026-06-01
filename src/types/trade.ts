@@ -57,4 +57,5 @@ export interface AppData {
   portfolioBaseValue: number; // manually-editable base (initial capital + all deposits)
   defaultCommissionPerAction: number; // $ per buy/sell leg, default 2.5
   riskUnitValue: number; // $ value of one risk unit, user-defined
+  ibkrLastSync?: string; // ISO timestamp of last successful IBKR import
 }

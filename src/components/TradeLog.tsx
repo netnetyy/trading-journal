@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { AppData } from '../types/trade';
 import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits, isClosedTrade, getOpenShares } from '../utils/calculations';
-import { Edit2, Trash2, Search, ChevronUp, ChevronDown, Eye, RefreshCw } from 'lucide-react';
+import { Edit2, Trash2, Search, ChevronUp, ChevronDown, Eye, RefreshCw, CheckCircle, ClipboardList } from 'lucide-react';
 
 interface TradeLogProps {
   data: AppData;
@@ -381,7 +381,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                           </button>
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={(e) => { e.stopPropagation(); onView(trade.id); }}
                             style={{ padding: '5px', borderRadius: '6px', border: '1px solid rgba(14,165,233,0.3)', backgroundColor: 'transparent', color: '#0ea5e9', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
@@ -403,6 +403,15 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                           >
                             <Trash2 size={13} />
                           </button>
+                          <span
+                            style={{ padding: '5px', display: 'flex', alignItems: 'center', cursor: 'default', pointerEvents: 'none' }}
+                            title={trade.conclusions?.trim() ? 'תחקורת' : 'לא תחקורת'}
+                          >
+                            {trade.conclusions?.trim()
+                              ? <CheckCircle size={13} color="#3b82f6" />
+                              : <ClipboardList size={13} color="#9ca3af" />
+                            }
+                          </span>
                         </div>
                       )}
                     </td>

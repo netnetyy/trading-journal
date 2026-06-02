@@ -23,7 +23,7 @@ import {
   isClosedTrade,
   getOpenShares,
 } from '../utils/calculations';
-import { TrendingUp, TrendingDown, Activity, DollarSign, Percent, Hash, Edit2, Plus, Trash2, X, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, DollarSign, Percent, Hash, Edit2, Plus, Trash2, X, RefreshCw, ClipboardList } from 'lucide-react';
 
 const FINNHUB_KEY_STORAGE = 'finnhub_api_key';
 
@@ -143,6 +143,8 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
   const plColor = totalPL >= 0 ? '#22c55e' : '#ef4444';
   const plPercent = data.portfolioBaseValue > 0 ? (totalPL / data.portfolioBaseValue) * 100 : 0;
 
+  const unreviewedCount = closedTrades.filter((t) => !t.conclusions?.trim()).length;
+
   const statCards = [
     {
       title: 'ערך תיק כולל',
@@ -176,6 +178,14 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       color: '#facc15',
       bg: 'rgba(250,204,21,0.1)',
     },
+    {
+      title: 'עסקאות לתחקור',
+      value: unreviewedCount.toString(),
+      sub: `מתוך ${closedTrades.length} עסקאות סגורות`,
+      icon: ClipboardList,
+      color: unreviewedCount > 0 ? '#f59e0b' : '#10b981',
+      bg: unreviewedCount > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)',
+    },
   ];
 
   return (
@@ -188,7 +198,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {statCards.map((sc, i) => {
           const Icon = sc.icon;
           return (

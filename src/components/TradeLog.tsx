@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { AppData } from '../types/trade';
 import { formatCurrency, formatPercent, formatDate, getPLPercentOfPortfolio, getNetProfitLoss, getRiskUnits, isClosedTrade, getOpenShares } from '../utils/calculations';
-import { Edit2, Trash2, Search, ChevronUp, ChevronDown, Eye, RefreshCw, CheckCircle, ClipboardList } from 'lucide-react';
+import { Trash2, Search, ChevronUp, ChevronDown, Eye, RefreshCw, CheckCircle, ClipboardList } from 'lucide-react';
 
 interface TradeLogProps {
   data: AppData;
@@ -390,28 +390,22 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                             <Eye size={13} />
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); onEdit(trade.id); }}
-                            style={{ padding: '5px', borderRadius: '6px', border: '1px solid rgba(71,85,105,0.4)', backgroundColor: 'transparent', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                            title="ערוך"
-                          >
-                            <Edit2 size={13} />
-                          </button>
-                          <button
                             onClick={(e) => { e.stopPropagation(); setConfirmDelete(trade.id); }}
                             style={{ padding: '5px', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.3)', backgroundColor: 'transparent', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                             title="מחק"
                           >
                             <Trash2 size={13} />
                           </button>
-                          <span
-                            style={{ padding: '5px', display: 'flex', alignItems: 'center', cursor: 'default', pointerEvents: 'none' }}
-                            title={trade.conclusions?.trim() ? 'תחקורת' : 'לא תחקורת'}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onEdit(trade.id); }}
+                            style={{ padding: '5px', borderRadius: '6px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            title={trade.conclusions?.trim() ? 'תחקורת — לחץ לעריכה' : 'לא תחקורת — לחץ לעריכה'}
                           >
                             {trade.conclusions?.trim()
                               ? <CheckCircle size={13} color="#3b82f6" />
                               : <ClipboardList size={13} color="#9ca3af" />
                             }
-                          </span>
+                          </button>
                         </div>
                       )}
                     </td>

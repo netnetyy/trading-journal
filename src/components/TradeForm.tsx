@@ -597,7 +597,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
             </div>
           </div>
         ))}
-        {exits.length < 3 && (
+        {exits.length < 4 && (
           <button
             onClick={() => setExits((prev) => [...prev, emptyExit()])}
             style={{

@@ -286,7 +286,7 @@ function mapPositionToTrade(pos, serialNumber) {
     date: e.dateISO,
   }));
 
-  const exits = pos.exits.slice(0, 3).map(e => {
+  const exits = pos.exits.slice(0, 4).map(e => {
     const costBasis = avgEntry * e.quantity;
     const pl = pos.type === 'long'
       ? e.price * e.quantity - costBasis

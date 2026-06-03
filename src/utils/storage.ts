@@ -154,6 +154,20 @@ function migrate(parsed: AppData): AppData {
   }
   if (parsed.defaultCommissionPerAction === undefined) parsed.defaultCommissionPerAction = 2.5;
   if (parsed.riskUnitValue === undefined) parsed.riskUnitValue = 100;
+
+  // One-time fix: correct doubled commissions caused by the * 2 bug in TradeForm
+  if (!parsed.commissionsFixed) {
+    const rate = parsed.defaultCommissionPerAction;
+    if (parsed.trades) {
+      parsed.trades = parsed.trades.map(t => ({
+        ...t,
+        commissions: (1 + (t.reinforcements?.length ?? 0) +
+          (t.exits?.filter(e => e.price > 0 && e.quantity > 0).length ?? 0)) * rate,
+      }));
+    }
+    parsed.commissionsFixed = true;
+  }
+
   if (parsed.trades) {
     parsed.trades = parsed.trades.map(t => ({
       ...t,
@@ -195,7 +209,12 @@ export async function loadData(): Promise<AppData> {
         await saveData(local);
         return local;
       }
-      return migrate(parsed);
+      const wasFixed = parsed.commissionsFixed;
+      const migrated = migrate(parsed);
+      if (!wasFixed) {
+        await saveData(migrated); // persist commission fix to Supabase immediately
+      }
+      return migrated;
     }
   } catch {
     // network error — fall back to localStorage
@@ -222,7 +241,12 @@ function loadFromLocalStorage(): AppData {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as AppData;
-      return migrate(parsed);
+      const wasFixed = parsed.commissionsFixed;
+      const migrated = migrate(parsed);
+      if (!wasFixed) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      }
+      return migrated;
     }
   } catch {
     // fall through

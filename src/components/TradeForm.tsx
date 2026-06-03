@@ -113,7 +113,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
   useEffect(() => {
     if (!commissionsManual) {
       const legs = 1 + reinforcements.length + exits.filter(e => e.price > 0 && e.quantity > 0).length;
-      setCommissions(Math.round(legs * defaultCommissionPerAction * 2 * 100) / 100);
+      setCommissions(Math.round(legs * defaultCommissionPerAction * 100) / 100);
     }
   }, [reinforcements.length, exits, commissionsManual, defaultCommissionPerAction]);
 

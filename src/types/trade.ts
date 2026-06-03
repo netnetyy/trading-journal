@@ -58,4 +58,5 @@ export interface AppData {
   defaultCommissionPerAction: number; // $ per buy/sell leg, default 2.5
   riskUnitValue: number; // $ value of one risk unit, user-defined
   ibkrLastSync?: string; // ISO timestamp of last successful IBKR import
+  commissionsFixed?: boolean; // one-time migration flag: true after * 2 bug correction
 }

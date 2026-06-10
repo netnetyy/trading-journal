@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Settings, X, TrendingUp, TrendingDown } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../utils/supabase';
 
 interface Purchase {
@@ -29,6 +29,8 @@ interface StoredData {
   investments: Investment[];
   snapshots: ValueSnapshot[];
 }
+
+const PIE_COLORS = ['#0ea5e9','#22c55e','#f59e0b','#a855f7','#ef4444','#06b6d4','#84cc16','#f97316','#ec4899','#6366f1'];
 
 const LOCAL_KEY = 'longterm_investments';
 const API_KEY_STORAGE = 'finnhub_api_key';
@@ -288,6 +290,10 @@ export default function LongTermInvestments() {
     return s + currentValue;
   }, 0);
   const totalPortfolioCost = investments.reduce((s, inv) => s + calcStats(inv).totalCost, 0);
+
+  const pieData = investments
+    .map(inv => ({ name: inv.symbol, value: calcStats(inv).currentValue }))
+    .filter(d => d.value > 0);
   const totalPL = totalPortfolioValue - totalPortfolioCost;
   const totalPLPct = totalPortfolioCost > 0 ? (totalPL / totalPortfolioCost) * 100 : 0;
 
@@ -379,6 +385,38 @@ export default function LongTermInvestments() {
               {card.sub && <div style={{ fontSize: '12px', color: card.color, marginTop: '4px' }}>{card.sub}</div>}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pie chart – portfolio allocation */}
+      {pieData.length >= 1 && (
+        <div style={{ backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginBottom: '16px' }}>הרכב התיק</div>
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} innerRadius={52} paddingAngle={2}>
+                {pieData.map((_, i) => (
+                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}
+                formatter={(value: number, name: string) => [
+                  `$${value.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${totalPortfolioValue > 0 ? ((value / totalPortfolioValue) * 100).toFixed(1) : 0}%)`,
+                  name,
+                ]}
+              />
+              <Legend
+                wrapperStyle={{ color: '#94a3b8', fontSize: '13px' }}
+                formatter={(value: string, entry: { payload?: { value: number } }) => {
+                  const pct = totalPortfolioValue > 0
+                    ? (((entry.payload?.value ?? 0) / totalPortfolioValue) * 100).toFixed(1)
+                    : '0';
+                  return `${value} (${pct}%)`;
+                }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       )}
 

@@ -292,7 +292,7 @@ export default function LongTermInvestments() {
   const totalPortfolioCost = investments.reduce((s, inv) => s + calcStats(inv).totalCost, 0);
 
   const pieData = investments
-    .map(inv => ({ name: inv.symbol, value: calcStats(inv).currentValue }))
+    .map(inv => ({ name: inv.symbol, value: calcStats(inv).totalCost }))
     .filter(d => d.value > 0);
   const totalPL = totalPortfolioValue - totalPortfolioCost;
   const totalPLPct = totalPortfolioCost > 0 ? (totalPL / totalPortfolioCost) * 100 : 0;
@@ -401,17 +401,17 @@ export default function LongTermInvestments() {
               </Pie>
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}
-                formatter={(value: number, name: string) => [
-                  `$${value.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${totalPortfolioValue > 0 ? ((value / totalPortfolioValue) * 100).toFixed(1) : 0}%)`,
-                  name,
-                ]}
+                formatter={(value, name) => {
+                  const v = Number(value);
+                  const pct = totalPortfolioCost > 0 ? ((v / totalPortfolioCost) * 100).toFixed(1) : '0';
+                  return [`$${v.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${pct}%)`, String(name)];
+                }}
               />
               <Legend
                 wrapperStyle={{ color: '#94a3b8', fontSize: '13px' }}
-                formatter={(value: string, entry: { payload?: { value: number } }) => {
-                  const pct = totalPortfolioValue > 0
-                    ? (((entry.payload?.value ?? 0) / totalPortfolioValue) * 100).toFixed(1)
-                    : '0';
+                formatter={(value, entry) => {
+                  const v = Number((entry as { payload?: { value?: number } }).payload?.value ?? 0);
+                  const pct = totalPortfolioCost > 0 ? ((v / totalPortfolioCost) * 100).toFixed(1) : '0';
                   return `${value} (${pct}%)`;
                 }}
               />

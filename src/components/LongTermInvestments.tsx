@@ -30,7 +30,6 @@ interface StoredData {
   snapshots: ValueSnapshot[];
 }
 
-const PIE_COLORS = ['#0ea5e9','#22c55e','#f59e0b','#a855f7','#ef4444','#06b6d4','#84cc16','#f97316','#ec4899','#6366f1'];
 
 const LOCAL_KEY = 'longterm_investments';
 const API_KEY_STORAGE = 'finnhub_api_key';
@@ -114,6 +113,30 @@ function getSymbolColor(inv: Investment, allInvestments: Investment[]): { bg: st
     };
   }
   return { bg: 'linear-gradient(135deg, #475569, #334155)', glow: 'none' };
+}
+
+function getPieColor(inv: Investment, allInvestments: Investment[]): string {
+  const { plPct } = calcStats(inv);
+  if (plPct === null) return '#334155';
+
+  const allPcts = allInvestments.map((i) => calcStats(i).plPct).filter((p): p is number => p !== null);
+  const profits = allPcts.filter((p) => p > 0);
+  const losses = allPcts.filter((p) => p < 0);
+
+  if (plPct > 0) {
+    const min = profits.length > 1 ? Math.min(...profits) : plPct;
+    const max = profits.length > 1 ? Math.max(...profits) : plPct;
+    const ratio = max === min ? 0.5 : (plPct - min) / (max - min);
+    const L = Math.round(22 + ratio * 43);
+    return `hsl(142,62%,${L}%)`;
+  } else if (plPct < 0) {
+    const min = losses.length > 1 ? Math.min(...losses) : plPct;
+    const max = losses.length > 1 ? Math.max(...losses) : plPct;
+    const ratio = max === min ? 0.5 : (plPct - max) / (min - max);
+    const L = Math.round(22 + ratio * 38);
+    return `hsl(0,68%,${L}%)`;
+  }
+  return '#475569';
 }
 
 function isOlderThan24h(dateStr?: string) {
@@ -395,9 +418,10 @@ export default function LongTermInvestments() {
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} innerRadius={52} paddingAngle={2}>
-                {pieData.map((_, i) => (
-                  <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                ))}
+                {pieData.map((entry, i) => {
+                  const inv = investments.find(inv => inv.symbol === entry.name);
+                  return <Cell key={i} fill={inv ? getPieColor(inv, investments) : '#334155'} />;
+                })}
               </Pie>
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#f1f5f9', fontSize: '13px' }}

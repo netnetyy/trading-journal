@@ -108,8 +108,9 @@ async function main() {
 
   console.log(`Portfolio value today (${today}): ${totalValue.toFixed(2)}`);
 
-  // Save back to Supabase
-  await supabaseSave({ investments: updated, snapshots: updatedSnapshots });
+  // Save back to Supabase. Spread `stored` first: the row also carries the
+  // closed-investment history, and writing only these two keys would erase it.
+  await supabaseSave({ ...stored, investments: updated, snapshots: updatedSnapshots });
   console.log('Prices saved to Supabase successfully.');
 }
 

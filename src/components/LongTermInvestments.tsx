@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, type CSSProperties } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Settings, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
+import { Plus, Trash2, ChevronDown, ChevronUp, RefreshCw, Settings, X, TrendingUp, TrendingDown, Archive, History } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '../utils/supabase';
 
@@ -25,9 +25,37 @@ interface ValueSnapshot {
   value: number; // total portfolio value at that date
 }
 
+/**
+ * A closed investment. The record freezes the numbers as they stood at closing
+ * time, and it is history only: closing moves the investment out of
+ * `investments`, so from that moment its cost and value are counted in no
+ * portfolio total anywhere -- not in this tab, and not in the expense tracker
+ * that reads this same Supabase row.
+ */
+interface ClosedInvestment {
+  id: string;
+  symbol: string;
+  name: string;
+  purchases: Purchase[];      // buy history, kept as-is
+  firstPurchaseDate: string;
+  closeDate: string;          // YYYY-MM-DD
+  closePrice: number;         // per share, at close
+  closeReason: string;
+  totalShares: number;
+  totalCost: number;
+  avgEntry: number;
+  proceeds: number;           // totalShares * closePrice
+  profitLoss: number;         // proceeds - totalCost
+  profitLossPercent: number;
+  holdingDays: number;
+  closedAt: string;           // when the closing was recorded
+}
+
 interface StoredData {
   investments: Investment[];
   snapshots: ValueSnapshot[];
+  /** Sits beside the portfolio, never inside it -- see ClosedInvestment */
+  closed: ClosedInvestment[];
 }
 
 
@@ -39,18 +67,26 @@ function generateId() {
   return crypto.randomUUID();
 }
 
+function emptyStore(): StoredData {
+  return { investments: [], snapshots: [], closed: [] };
+}
+
 function parseStored(raw: unknown): StoredData {
-  if (Array.isArray(raw)) return { investments: raw as Investment[], snapshots: [] };
-  if (raw && typeof raw === 'object' && 'investments' in raw) return raw as StoredData;
-  return { investments: [], snapshots: [] };
+  if (Array.isArray(raw)) return { investments: raw as Investment[], snapshots: [], closed: [] };
+  if (raw && typeof raw === 'object' && 'investments' in raw) {
+    const s = raw as Partial<StoredData>;
+    // `closed` is newer than the stored rows -- older data simply has none
+    return { investments: s.investments ?? [], snapshots: s.snapshots ?? [], closed: s.closed ?? [] };
+  }
+  return emptyStore();
 }
 
 function loadFromLocal(): StoredData {
   try {
     const raw = localStorage.getItem(LOCAL_KEY);
-    return raw ? parseStored(JSON.parse(raw)) : { investments: [], snapshots: [] };
+    return raw ? parseStored(JSON.parse(raw)) : emptyStore();
   } catch {
-    return { investments: [], snapshots: [] };
+    return emptyStore();
   }
 }
 
@@ -83,6 +119,10 @@ function calcStats(investment: Investment) {
   const pl = investment.currentPrice ? currentValue - totalCost : null;
   const plPct = investment.currentPrice && totalCost > 0 ? ((currentValue - totalCost) / totalCost) * 100 : null;
   return { totalShares, totalCost, avgEntry, currentValue, pl, plPct };
+}
+
+function fmtUsd(n: number) {
+  return `$${n.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function getSymbolColor(inv: Investment, allInvestments: Investment[]): { bg: string; glow: string } {
@@ -161,13 +201,16 @@ async function fetchPrice(symbol: string, apiKey: string): Promise<number | null
 export default function LongTermInvestments() {
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [snapshots, setSnapshots] = useState<ValueSnapshot[]>([]);
+  const [closed, setClosed] = useState<ClosedInvestment[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiKey, setApiKey] = useState(() => localStorage.getItem(API_KEY_STORAGE) ?? '');
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedClosedId, setExpandedClosedId] = useState<string | null>(null);
   const [showAddInvestment, setShowAddInvestment] = useState(false);
   const [addPurchaseForId, setAddPurchaseForId] = useState<string | null>(null);
+  const [closeForId, setCloseForId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMsg, setRefreshMsg] = useState('');
 
@@ -185,18 +228,40 @@ export default function LongTermInvestments() {
   const [pPrice, setPPrice] = useState('');
   const [pNotes, setPNotes] = useState('');
 
-  const persist = useCallback((updatedInvestments: Investment[], updatedSnapshots?: ValueSnapshot[]) => {
-    setInvestments(updatedInvestments);
-    const snaps = updatedSnapshots ?? snapshots;
-    if (updatedSnapshots) setSnapshots(updatedSnapshots);
-    saveData({ investments: updatedInvestments, snapshots: snaps });
-  }, [snapshots]);
+  // Close investment form
+  const [cDate, setCDate] = useState(new Date().toISOString().slice(0, 10));
+  const [cPrice, setCPrice] = useState('');
+  const [cReason, setCReason] = useState('');
+
+  // Mirror of what was last persisted. A price refresh takes seconds, and
+  // whatever the user does meanwhile (closing an investment, say) must not be
+  // undone by a save that still holds the pre-refresh state in its closure.
+  const storeRef = useRef<StoredData>(emptyStore());
+
+  const persist = useCallback((
+    updatedInvestments: Investment[],
+    updatedSnapshots?: ValueSnapshot[],
+    updatedClosed?: ClosedInvestment[],
+  ) => {
+    const next: StoredData = {
+      investments: updatedInvestments,
+      snapshots: updatedSnapshots ?? storeRef.current.snapshots,
+      closed: updatedClosed ?? storeRef.current.closed,
+    };
+    storeRef.current = next;
+    setInvestments(next.investments);
+    setSnapshots(next.snapshots);
+    setClosed(next.closed);
+    saveData(next);
+  }, []);
 
   // Load from Supabase on mount
   useEffect(() => {
     loadData().then((stored) => {
+      storeRef.current = stored;
       setInvestments(stored.investments);
       setSnapshots(stored.snapshots);
+      setClosed(stored.closed);
       setLoading(false);
     });
   }, []);
@@ -218,23 +283,30 @@ export default function LongTermInvestments() {
     setRefreshing(true);
     if (showMsg) setRefreshMsg('מעדכן מחירים...');
     const targets = ids ?? investments.map((i) => i.id);
-    const updated = [...investments];
+    const prices = new Map<string, number>();
     for (const id of targets) {
-      const idx = updated.findIndex((i) => i.id === id);
-      if (idx === -1) continue;
-      const price = await fetchPrice(updated[idx].symbol, apiKey);
-      if (price !== null) {
-        updated[idx] = { ...updated[idx], currentPrice: price, lastPriceUpdate: new Date().toISOString() };
-      }
+      const inv = investments.find((i) => i.id === id);
+      if (!inv) continue;
+      const price = await fetchPrice(inv.symbol, apiKey);
+      if (price !== null) prices.set(id, price);
     }
+
+    // Apply onto the latest state, not onto the list captured before the fetch:
+    // an investment closed while prices were loading must stay closed.
+    const now = new Date().toISOString();
+    const updated = storeRef.current.investments.map((inv) => {
+      const price = prices.get(inv.id);
+      return price === undefined ? inv : { ...inv, currentPrice: price, lastPriceUpdate: now };
+    });
+
     // Save portfolio value snapshot (one per day)
-    const today = new Date().toISOString().slice(0, 10);
+    const today = now.slice(0, 10);
     const totalValue = updated.reduce((s, inv) => {
       const shares = inv.purchases.reduce((a, p) => a + p.shares, 0);
       return s + shares * (inv.currentPrice ?? 0);
     }, 0);
     const updatedSnapshots = [
-      ...snapshots.filter((s) => s.date !== today),
+      ...storeRef.current.snapshots.filter((s) => s.date !== today),
       { date: today, value: +totalValue.toFixed(2) },
     ].sort((a, b) => a.date.localeCompare(b.date));
 
@@ -298,6 +370,67 @@ export default function LongTermInvestments() {
   function handleDeleteInvestment(id: string) {
     if (!confirm('למחוק את ההשקעה הזו לגמרי?')) return;
     persist(investments.filter((i) => i.id !== id));
+  }
+
+  function openCloseForm(id: string) {
+    const inv = investments.find((i) => i.id === id);
+    setCloseForId(id);
+    setCDate(new Date().toISOString().slice(0, 10));
+    // The last known market price is the likely closing price -- still editable
+    setCPrice(inv?.currentPrice != null ? String(inv.currentPrice) : '');
+    setCReason('');
+  }
+
+  /**
+   * Closing takes the investment out of the portfolio entirely: it leaves
+   * `investments`, so its cost and value stop being counted in every total,
+   * and moves into `closed` as a frozen record.
+   */
+  function handleCloseInvestment() {
+    const inv = investments.find((i) => i.id === closeForId);
+    if (!inv) return;
+    const price = parseFloat(cPrice);
+    if (!isFinite(price) || price < 0 || !cDate) return;
+
+    const { totalShares, totalCost, avgEntry } = calcStats(inv);
+    const proceeds = totalShares * price;
+    const firstPurchaseDate = inv.purchases.reduce(
+      (min, p) => (p.date < min ? p.date : min),
+      inv.purchases[0]?.date ?? cDate
+    );
+    const record: ClosedInvestment = {
+      id: inv.id,
+      symbol: inv.symbol,
+      name: inv.name,
+      purchases: inv.purchases,
+      firstPurchaseDate,
+      closeDate: cDate,
+      closePrice: price,
+      closeReason: cReason.trim(),
+      totalShares,
+      totalCost,
+      avgEntry,
+      proceeds,
+      profitLoss: proceeds - totalCost,
+      profitLossPercent: totalCost > 0 ? ((proceeds - totalCost) / totalCost) * 100 : 0,
+      holdingDays: Math.max(
+        0,
+        Math.round((new Date(cDate).getTime() - new Date(firstPurchaseDate).getTime()) / 86400000)
+      ),
+      closedAt: new Date().toISOString(),
+    };
+
+    persist(investments.filter((i) => i.id !== inv.id), undefined, [...closed, record]);
+    if (expandedId === inv.id) setExpandedId(null);
+    if (addPurchaseForId === inv.id) setAddPurchaseForId(null);
+    setCloseForId(null);
+    setCPrice(''); setCReason('');
+    setCDate(new Date().toISOString().slice(0, 10));
+  }
+
+  function handleDeleteClosed(id: string) {
+    if (!confirm('למחוק את הרשומה הזו מההיסטוריה?')) return;
+    persist(investments, undefined, closed.filter((c) => c.id !== id));
   }
 
   if (loading) {
@@ -581,6 +714,13 @@ export default function LongTermInvestments() {
                       <Plus size={12} /> חיזוק
                     </button>
                     <button
+                      onClick={() => openCloseForm(inv.id)}
+                      title="סגירת ההשקעה — יוצאת מהתיק ועוברת להיסטוריה"
+                      style={{ padding: '6px 10px', backgroundColor: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.25)', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Archive size={12} /> סגירה
+                    </button>
+                    <button
                       onClick={() => setExpandedId(isExpanded ? null : inv.id)}
                       style={{ padding: '6px 8px', backgroundColor: 'transparent', color: '#64748b', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '6px', cursor: 'pointer' }}
                     >
@@ -651,6 +791,126 @@ export default function LongTermInvestments() {
         </div>
       )}
 
+      {/* Closed-investment history. Records only -- every number here is
+          deliberately absent from the portfolio totals above. */}
+      {closed.length > 0 && (() => {
+        const history = [...closed].sort(
+          (a, b) => b.closeDate.localeCompare(a.closeDate) || b.closedAt.localeCompare(a.closedAt)
+        );
+        const realized = history.reduce((s, c) => s + c.profitLoss, 0);
+
+        return (
+          <div style={{ marginTop: '36px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>
+                <History size={18} style={{ color: '#64748b' }} />
+                היסטוריית השקעות לטווח ארוך
+              </h2>
+              <div style={{ fontSize: '13px', color: '#64748b' }}>
+                {history.length} השקעות סגורות ·{' '}
+                <span style={{ color: realized >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                  {realized >= 0 ? '+' : '-'}{fmtUsd(Math.abs(realized))}
+                </span>
+              </div>
+            </div>
+            <p style={{ color: '#475569', fontSize: '12px', margin: '4px 0 14px' }}>
+              רישום בלבד — הסכומים כאן אינם נספרים בשווי התיק, בעלות או ברווח/הפסד שלמעלה.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {history.map((c) => {
+                const win = c.profitLoss >= 0;
+                const isOpen = expandedClosedId === c.id;
+
+                return (
+                  <div key={c.id} style={{ backgroundColor: 'rgba(30,41,59,0.4)', border: '1px solid rgba(71,85,105,0.25)', borderRadius: '12px', overflow: 'hidden' }}>
+                    <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      {/* Symbol badge — muted, so a closed position never reads as a live one */}
+                      <div style={{ width: '48px', height: '48px', borderRadius: '11px', background: win ? 'linear-gradient(135deg, hsl(142,40%,26%), hsl(142,40%,17%))' : 'linear-gradient(135deg, hsl(0,45%,28%), hsl(0,45%,18%))', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '12px' }}>{c.symbol}</span>
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: '#cbd5e1', fontSize: '15px' }}>{c.name}</div>
+                        <div style={{ color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
+                          {c.totalShares.toLocaleString('en', { maximumFractionDigits: 4 })} מניות · נפתחה {new Date(c.firstPurchaseDate).toLocaleDateString('he-IL')} · נסגרה {new Date(c.closeDate).toLocaleDateString('he-IL')} · {c.holdingDays} ימי החזקה
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'center', minWidth: '100px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '2px' }}>מחיר סגירה</div>
+                        <div style={{ fontWeight: 700, color: '#e2e8f0', fontSize: '15px' }}>${c.closePrice.toFixed(2)}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>כניסה: ${c.avgEntry.toFixed(2)}</div>
+                      </div>
+
+                      <div style={{ textAlign: 'center', minWidth: '110px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '2px' }}>תמורה</div>
+                        <div style={{ fontWeight: 700, color: '#e2e8f0', fontSize: '15px' }}>{fmtUsd(c.proceeds)}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>עלות: {fmtUsd(c.totalCost)}</div>
+                      </div>
+
+                      <div style={{ textAlign: 'center', minWidth: '100px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '2px' }}>רווח/הפסד</div>
+                        <div style={{ fontWeight: 700, color: win ? '#22c55e' : '#ef4444', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                          {win ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                          {win ? '+' : '-'}{fmtUsd(Math.abs(c.profitLoss))}
+                        </div>
+                        <div style={{ fontSize: '11px', color: win ? '#22c55e' : '#ef4444', marginTop: '2px' }}>
+                          {c.profitLossPercent >= 0 ? '+' : ''}{c.profitLossPercent.toFixed(2)}%
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                        <button
+                          onClick={() => setExpandedClosedId(isOpen ? null : c.id)}
+                          style={{ padding: '6px 8px', backgroundColor: 'transparent', color: '#64748b', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClosed(c.id)}
+                          title="מחיקת הרשומה מההיסטוריה"
+                          style={{ padding: '6px 8px', backgroundColor: 'transparent', color: '#64748b', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {isOpen && (
+                      <div style={{ borderTop: '1px solid rgba(71,85,105,0.25)', padding: '16px 20px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', marginBottom: '6px' }}>סיבת הסגירה</div>
+                        <div style={{ color: c.closeReason ? '#cbd5e1' : '#475569', fontSize: '13px', lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: '18px' }}>
+                          {c.closeReason || 'לא נרשמה סיבה'}
+                        </div>
+
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', marginBottom: '12px' }}>היסטוריית רכישות</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {c.purchases.map((p, idx) => (
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', backgroundColor: 'rgba(15,23,42,0.5)', borderRadius: '8px' }}>
+                              <span style={{ color: '#475569', fontSize: '12px', minWidth: '24px' }}>#{idx + 1}</span>
+                              <span style={{ color: '#64748b', fontSize: '13px', minWidth: '90px' }}>{new Date(p.date).toLocaleDateString('he-IL')}</span>
+                              <span style={{ color: '#cbd5e1', fontSize: '13px', minWidth: '80px' }}>{p.shares.toLocaleString('en', { maximumFractionDigits: 4 })} מניות</span>
+                              <span style={{ color: '#94a3b8', fontSize: '13px', minWidth: '90px' }}>@ ${p.pricePerShare.toFixed(2)}</span>
+                              <span style={{ color: '#94a3b8', fontSize: '13px', minWidth: '100px' }}>סה&quot;כ: {fmtUsd(p.shares * p.pricePerShare)}</span>
+                              {p.notes && <span style={{ color: '#64748b', fontSize: '12px', flex: 1 }}>{p.notes}</span>}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div style={{ fontSize: '11px', color: '#475569', marginTop: '14px' }}>
+                          הסגירה נרשמה ב-{new Date(c.closedAt).toLocaleDateString('he-IL')}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Modal: Add new investment */}
       {showAddInvestment && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
@@ -697,6 +957,82 @@ export default function LongTermInvestments() {
           </div>
         </div>
       )}
+
+      {/* Modal: close an investment */}
+      {closeForId && (() => {
+        const inv = investments.find((i) => i.id === closeForId);
+        if (!inv) return null;
+        const { totalShares, totalCost, avgEntry } = calcStats(inv);
+        const price = parseFloat(cPrice);
+        const valid = isFinite(price) && price >= 0 && !!cDate;
+        const proceeds = valid ? totalShares * price : null;
+        const pl = proceeds === null ? null : proceeds - totalCost;
+        const plPct = pl === null || totalCost <= 0 ? null : (pl / totalCost) * 100;
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+            <div style={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '16px', padding: '28px', width: '480px', direction: 'rtl' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                <div>
+                  <h2 style={{ color: '#f1f5f9', fontSize: '18px', fontWeight: 700, margin: 0 }}>סגירת השקעה — {inv.symbol}</h2>
+                  <p style={{ color: '#64748b', fontSize: '13px', margin: '4px 0 0' }}>
+                    {totalShares.toLocaleString('en', { maximumFractionDigits: 4 })} מניות · כניסה ממוצעת ${avgEntry.toFixed(2)} · עלות {fmtUsd(totalCost)}
+                  </p>
+                </div>
+                <button onClick={() => setCloseForId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>תאריך סגירה *</div>
+                    <input type="date" value={cDate} onChange={(e) => setCDate(e.target.value)} style={inputStyle} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>מחיר סגירה למניה ($) *</div>
+                    <input type="number" value={cPrice} onChange={(e) => setCPrice(e.target.value)} placeholder="180.00" style={inputStyle} />
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>למה סגרת? (אופציונלי)</div>
+                  <textarea
+                    value={cReason}
+                    onChange={(e) => setCReason(e.target.value)}
+                    placeholder="הסיבה לסגירה..."
+                    rows={3}
+                    style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6 }}
+                  />
+                </div>
+              </div>
+
+              {/* What the record will say -- shown before saving, since the numbers freeze on close */}
+              <div style={{ backgroundColor: 'rgba(15,23,42,0.6)', border: '1px solid rgba(71,85,105,0.3)', borderRadius: '10px', padding: '14px 16px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '2px' }}>תמורה</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#e2e8f0' }}>{proceeds === null ? '—' : fmtUsd(proceeds)}</div>
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '2px' }}>רווח/הפסד</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: pl === null ? '#475569' : pl >= 0 ? '#22c55e' : '#ef4444' }}>
+                    {pl === null ? '—' : `${pl >= 0 ? '+' : '-'}${fmtUsd(Math.abs(pl))}`}
+                    {plPct !== null && ` (${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%)`}
+                  </div>
+                </div>
+              </div>
+
+              <p style={{ color: '#64748b', fontSize: '12px', lineHeight: 1.7, margin: '14px 0 0' }}>
+                לאחר הסגירה ההשקעה תעבור ל&quot;היסטוריית השקעות לטווח ארוך&quot; ותצא מהתיק:
+                העלות, השווי והרווח שלה לא ייספרו יותר בשום סיכום — לא כאן ולא במעקב ההוצאות.
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
+                <button onClick={handleCloseInvestment} disabled={!valid} style={{ ...btnPrimary, opacity: valid ? 1 : 0.5, cursor: valid ? 'pointer' : 'not-allowed' }}>סגור השקעה</button>
+                <button onClick={() => setCloseForId(null)} style={btnSecondary}>ביטול</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Modal: API Key settings */}
       {showApiSettings && (

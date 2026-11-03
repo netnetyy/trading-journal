@@ -22,3 +22,17 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: node scripts/ibkr-import.mjs
+
+  # This repo is public, so GitHub disables a scheduled workflow after 60 days
+  # without a commit. That silently froze prices on 2026-10-19. Re-enabling the
+  # workflow through the API resets that timer, so every run keeps itself alive
+  # without dummy commits. A separate job, so it still runs if the import fails.
+  keepalive:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Reset the 60-day inactivity timer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/ibkr-import.yml/enable"

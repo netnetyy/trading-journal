@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ClosedInvestment, Investment, Purchase, StoredData } from './types';
-import { API_KEY_STORAGE, emptyStore, fetchQuote, loadPortfolio, savePortfolio } from './store';
+import { API_KEY_STORAGE, QUOTE_ERROR_TEXT, cleanApiKey, emptyStore, fetchQuote, loadPortfolio, savePortfolio, type QuoteError } from './store';
 import { calcStats, isOlderThan24h } from './calc';
 
 function readApiKey(): string {
@@ -20,6 +20,8 @@ export function usePortfolio() {
   const [apiKey, setApiKeyState] = useState(readApiKey);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshMsg, setRefreshMsg] = useState('');
+  /** Why the last refresh failed -- stays on screen until a refresh works */
+  const [refreshError, setRefreshError] = useState('');
 
   // Mirror of what was last persisted. A price refresh takes seconds, and
   // whatever the user does meanwhile (closing an investment, say) must not be
@@ -48,9 +50,15 @@ export function usePortfolio() {
     if (!silent) setRefreshMsg('');
     const targets = storeRef.current.investments.filter((i) => !ids || ids.includes(i.id));
     const quotes = new Map<string, { price: number; prevClose?: number }>();
+    const failed: { symbol: string; error: QuoteError }[] = [];
     for (const inv of targets) {
-      const q = await fetchQuote(inv.symbol, key);
-      if (q) quotes.set(inv.id, q);
+      const r = await fetchQuote(inv.symbol, key);
+      if (r.ok) quotes.set(inv.id, r.quote);
+      else {
+        failed.push({ symbol: inv.symbol, error: r.error });
+        // A bad key or a closed connection fails every symbol the same way
+        if (r.error === 'invalid-key' || r.error === 'network') break;
+      }
     }
 
     // Apply onto the latest state, not onto the list captured before the fetch:
@@ -71,26 +79,51 @@ export function usePortfolio() {
         ].sort((a, b) => a.date.localeCompare(b.date))
       : storeRef.current.snapshots;
 
-    commit({ investments, snapshots });
+    if (quotes.size > 0) commit({ investments, snapshots });
     setRefreshing(false);
-    if (!silent) {
-      setRefreshMsg(quotes.size === targets.length ? 'המחירים עודכנו' : `עודכנו ${quotes.size} מתוך ${targets.length}`);
+
+    const first = failed[0];
+    if (first && (first.error === 'invalid-key' || first.error === 'network' || first.error === 'rate-limit')) {
+      setRefreshError(QUOTE_ERROR_TEXT[first.error]);
+    } else if (failed.length > 0) {
+      setRefreshError(`לא נמצא מחיר עבור ${failed.map((f) => f.symbol).join(', ')}`);
+    } else {
+      setRefreshError('');
+    }
+    if (!silent && quotes.size > 0) {
+      setRefreshMsg(failed.length === 0 ? 'המחירים עודכנו' : `עודכנו ${quotes.size} מתוך ${targets.length}`);
       setTimeout(() => setRefreshMsg(''), 3000);
     }
-    return true;
+    return failed.length === 0;
   }, [commit]);
 
-  // Auto-refresh stale prices once the data is in
+  // Auto-refresh stale prices once, when the data is in. (Saving a new key
+  // refreshes everything itself, so this must not fire again on a key change.)
+  const autoRefreshed = useRef(false);
   useEffect(() => {
-    if (loading || !apiKey) return;
+    if (loading || autoRefreshed.current) return;
+    autoRefreshed.current = true;
+    if (!readApiKey()) return;
     const stale = storeRef.current.investments.filter((inv) => isOlderThan24h(inv.lastPriceUpdate));
     if (stale.length > 0) refreshPrices(stale.map((i) => i.id), true);
-  }, [loading, apiKey, refreshPrices]);
+  }, [loading, refreshPrices]);
 
-  const setApiKey = useCallback((key: string) => {
+  /**
+   * Checks the key against Finnhub, and only then saves it and refreshes
+   * every price. Returns an error text when Finnhub turns the key down.
+   */
+  const setApiKey = useCallback(async (raw: string): Promise<string | null> => {
+    const key = cleanApiKey(raw);
+    if (!key) return 'המפתח ריק';
+    const probe = storeRef.current.investments[0]?.symbol ?? 'AAPL';
+    const r = await fetchQuote(probe, key);
+    if (!r.ok && r.error !== 'no-data') return QUOTE_ERROR_TEXT[r.error];
     try { localStorage.setItem(API_KEY_STORAGE, key); } catch { /* ignore */ }
     setApiKeyState(key);
-  }, []);
+    setRefreshError('');
+    refreshPrices();
+    return null;
+  }, [refreshPrices]);
 
   const addInvestment = useCallback((symbol: string, name: string, first: NewPurchase) => {
     const sym = symbol.toUpperCase().trim();
@@ -174,6 +207,7 @@ export function usePortfolio() {
     setApiKey,
     refreshing,
     refreshMsg,
+    refreshError,
     refreshPrices,
     addInvestment,
     addPurchase,

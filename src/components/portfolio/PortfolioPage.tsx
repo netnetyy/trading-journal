@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, RefreshCw, Settings, KeyRound, Sprout, ArrowUpDown } from 'lucide-react';
+import { Plus, RefreshCw, Settings, KeyRound, Sprout, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import type { PortfolioApi } from '../../portfolio/usePortfolio';
 import { calcStats, calcTotals, fmtPct, fmtSignedUsd, fmtUsd, timeAgo, toneClass } from '../../portfolio/calc';
 import { Button, Card, EmptyState } from '../ui';
@@ -91,6 +91,16 @@ export default function PortfolioPage({ p }: { p: PortfolioApi }) {
           </span>
           <span className="text-xs font-medium text-warn">הגדר ←</span>
         </button>
+      )}
+
+      {p.apiKey && p.refreshError && (
+        <div className="mb-5 flex items-center gap-3 rounded-2xl border border-loss/25 bg-loss-soft px-4 py-3">
+          <AlertTriangle size={18} className="shrink-0 text-loss" />
+          <span className="flex-1 text-sm text-ink-2">
+            <span className="font-medium text-loss">המחירים לא עודכנו.</span> {p.refreshError}
+          </span>
+          <button onClick={() => setShowSettings(true)} className="cursor-pointer text-xs font-medium whitespace-nowrap text-loss">בדוק מפתח</button>
+        </div>
       )}
 
       {investments.length === 0 ? (

@@ -233,9 +233,22 @@ export function SettingsSheet({ open, onClose, apiKey, onSave }: {
   open: boolean;
   onClose: () => void;
   apiKey: string;
-  onSave: (key: string) => void;
+  /** Resolves to an error text when the key is turned down */
+  onSave: (key: string) => Promise<string | null>;
 }) {
   const [value, setValue] = useState(apiKey);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState('');
+
+  const save = async () => {
+    setChecking(true);
+    setError('');
+    const err = await onSave(value);
+    setChecking(false);
+    if (err) setError(err);
+    else onClose();
+  };
+
   return (
     <Sheet
       open={open}
@@ -243,7 +256,9 @@ export function SettingsSheet({ open, onClose, apiKey, onSave }: {
       title="עדכון מחירים"
       sub="מחירים נמשכים מ-Finnhub (חינם)"
       footer={<>
-        <Button variant="primary" className="flex-1" disabled={!value.trim()} onClick={() => { onSave(value.trim()); onClose(); }}>שמור</Button>
+        <Button variant="primary" className="flex-1" disabled={!value.trim() || checking} onClick={save}>
+          {checking ? 'בודק את המפתח...' : 'שמור'}
+        </Button>
         <Button onClick={onClose}>ביטול</Button>
       </>}
     >
@@ -253,8 +268,9 @@ export function SettingsSheet({ open, onClose, apiKey, onSave }: {
         <li>העתק את המפתח מהדשבורד שלהם והדבק כאן</li>
       </ol>
       <Field label="API Key" hint="נשמר רק בדפדפן הזה">
-        <input className="field ltr" value={value} onChange={(e) => setValue(e.target.value)} placeholder="הדבק כאן..." autoCorrect="off" autoCapitalize="off" spellCheck={false} />
+        <input className="field ltr" value={value} onChange={(e) => { setValue(e.target.value); setError(''); }} placeholder="הדבק כאן..." autoCorrect="off" autoCapitalize="off" spellCheck={false} />
       </Field>
+      {error && <div className="mt-3 rounded-xl bg-loss-soft px-3 py-2.5 text-sm text-loss">{error}</div>}
       <p className="mt-4 text-xs leading-relaxed text-faint">
         בנוסף, המחירים מתעדכנים אוטומטית כל ערב בימי מסחר, גם בלי לפתוח את האפליקציה.
       </p>

@@ -2,9 +2,10 @@ name: Scheduled Price Update
 
 on:
   schedule:
-    # 20:00 UTC = 23:00 Israel time (summer/IDT)
-    # Runs every Monday-Friday
-    - cron: '0 20 * * 1-5'
+    # 21:23 UTC, Monday-Friday: after the US close all year (21:00 UTC in
+    # winter, 20:00 in summer). Off the round hour, since GitHub delays
+    # scheduled runs at :00 by hours.
+    - cron: '23 21 * * 1-5'
   workflow_dispatch: # allow manual trigger from GitHub UI
 
 jobs:

@@ -1,14 +1,17 @@
 {
-  "name": "יומן מסחר",
-  "short_name": "יומן מסחר",
-  "description": "יומן מסחר אישי לשוק ההון",
-  "start_url": "/",
+  "name": "היומן שלי · השקעות",
+  "short_name": "היומן שלי",
+  "description": "מעקב השקעות לטווח ארוך ויומן מסחר",
+  "start_url": "./",
+  "scope": "./",
+  "dir": "rtl",
+  "lang": "he",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#0a0d14",
+  "theme_color": "#0a0d14",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

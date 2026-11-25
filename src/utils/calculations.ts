@@ -207,11 +207,16 @@ export function formatCurrency(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  return (value < 0 ? '-$' : '$') + formatted;
+  return ltr((value < 0 ? '-$' : '$') + formatted);
+}
+
+// Isolate as left-to-right, so "-$565.00" does not show as "$565.00-" in Hebrew text
+function ltr(s: string): string {
+  return '\u2066' + s + '\u2069';
 }
 
 export function formatPercent(value: number): string {
-  return (value >= 0 ? '+' : '') + value.toFixed(2) + '%';
+  return ltr((value >= 0 ? '+' : '') + value.toFixed(2) + '%');
 }
 
 export function formatDate(isoDate: string): string {

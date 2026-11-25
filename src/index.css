@@ -1,37 +1,142 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   One dark theme. Every screen reads these, through Tailwind utilities
+   (bg-surface, text-muted, text-profit ...) or var(--color-*) directly. */
 @theme {
-  --color-primary-50: #f0f9ff;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-profit: #22c55e;
-  --color-loss: #ef4444;
+  --font-sans: 'Rubik', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-bg: #0a0d14;
+  --color-surface: #111621;
+  --color-surface-2: #171d2b;
+  --color-surface-3: #1f2637;
+  --color-line: rgba(148, 163, 184, 0.10);
+  --color-line-strong: rgba(148, 163, 184, 0.18);
+
+  --color-ink: #eef1f6;
+  --color-ink-2: #b6bdcc;
+  --color-muted: #7d879a;
+  --color-faint: #565f73;
+
+  --color-accent: #6e8bff;
+  --color-accent-strong: #5470f0;
+  --color-accent-soft: rgba(110, 139, 255, 0.14);
+
+  --color-profit: #34d399;
+  --color-profit-soft: rgba(52, 211, 153, 0.12);
+  --color-loss: #f87171;
+  --color-loss-soft: rgba(248, 113, 113, 0.12);
+  --color-warn: #fbbf24;
+  --color-warn-soft: rgba(251, 191, 36, 0.12);
+
+  /* kept for older class names */
+  --color-primary-500: #6e8bff;
+  --color-primary-600: #5470f0;
 }
 
-* {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  color-scheme: dark;
 }
 
 body {
   direction: rtl;
-  background-color: #0f172a;
-  color: #e2e8f0;
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
   margin: 0;
+  overscroll-behavior-y: none;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
+button, input, select, textarea {
+  font-family: inherit;
 }
-::-webkit-scrollbar-track {
-  background: #1e293b;
+
+/* Money columns line up */
+.num {
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
-::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 3px;
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a3245; border-radius: 3px; }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.animate-sheet { animation: sheet-up 0.22s cubic-bezier(.2,.8,.2,1); }
+.animate-fade { animation: fade-in 0.18s ease-out; }
+.animate-rise { animation: rise 0.25s ease-out both; }
+
+/* Shared form controls */
+.field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 13px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-line-strong);
+  border-radius: 12px;
+  color: var(--color-ink);
+  font-size: 16px; /* 16px stops iOS from zooming on focus */
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.field:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+.field::placeholder { color: var(--color-faint); }
+input[type="date"].field { min-height: 46px; }
+input[type="number"].field, .field.ltr { direction: ltr; text-align: right; }
+
+/* Safe areas for the installed (home-screen) app */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* ── Swing archive screens ──────────────────────────────────────────────────
+   Those screens are written with inline styles. These rules give them the
+   page padding and make their fixed grids, tables and dialogs fit a phone. */
+.page {
+  padding: 28px;
+  max-width: 1280px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+  .page { padding: 20px 16px 28px; }
+  .rg-stack { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+@media (max-width: 767px) {
+  .rg-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  .page h1 { font-size: 21px !important; }
+  .page table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .page input, .page select, .page textarea { font-size: 16px !important; }
+  .page .wrap-sm { flex-wrap: wrap; gap: 10px; }
+}
+
+.dialog-fit {
+  max-width: calc(100vw - 32px) !important;
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  box-sizing: border-box;
 }

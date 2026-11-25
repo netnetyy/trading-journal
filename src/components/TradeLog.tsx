@@ -60,11 +60,11 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
   };
 
   const inputStyle: React.CSSProperties = {
-    backgroundColor: '#0f172a',
-    border: '1px solid rgba(71,85,105,0.5)',
+    backgroundColor: '#0a0d14',
+    border: '1px solid rgba(148,163,184,0.2)',
     borderRadius: '8px',
     padding: '8px 12px',
-    color: '#e2e8f0',
+    color: '#dfe4ec',
     fontSize: '13px',
     outline: 'none',
     direction: 'rtl',
@@ -72,7 +72,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
 
   const thStyle: React.CSSProperties = {
     padding: '10px 12px',
-    color: '#64748b',
+    color: '#7d879a',
     fontWeight: 500,
     textAlign: 'right',
     fontSize: '12px',
@@ -82,11 +82,11 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
   };
 
   return (
-    <div style={{ padding: '28px', direction: 'rtl' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="page" style={{ direction: 'rtl' }}>
+      <div className="wrap-sm" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>יומן עסקאות</h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#eef1f6', margin: 0 }}>יומן עסקאות</h1>
+          <p style={{ color: '#7d879a', fontSize: '14px', marginTop: '4px' }}>
             {filtered.length} עסקאות מוצגות
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
           <button
             onClick={onAdd}
             style={{
-              backgroundColor: '#0284c7',
+              backgroundColor: '#5470f0',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -103,8 +103,8 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
               fontWeight: 600,
               cursor: 'pointer',
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0ea5e9')}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0284c7')}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#6e8bff')}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#5470f0')}
           >
             + עסקה חדשה
           </button>
@@ -114,17 +114,17 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
               display: 'flex',
               alignItems: 'center',
               gap: '5px',
-              backgroundColor: '#1e293b',
-              border: '1px solid rgba(71,85,105,0.5)',
+              backgroundColor: '#111621',
+              border: '1px solid rgba(148,163,184,0.2)',
               borderRadius: '6px',
               padding: '4px 10px',
               fontSize: '11px',
-              color: data.ibkrLastSync ? '#64748b' : '#334155',
+              color: data.ibkrLastSync ? '#7d879a' : '#1f2637',
               whiteSpace: 'nowrap',
             }}
           >
-            <RefreshCw size={10} style={{ color: data.ibkrLastSync ? '#38bdf8' : '#334155', flexShrink: 0 }} />
-            <span style={{ color: '#475569', fontWeight: 500 }}>IBKR</span>
+            <RefreshCw size={10} style={{ color: data.ibkrLastSync ? '#93a8ff' : '#1f2637', flexShrink: 0 }} />
+            <span style={{ color: '#565f73', fontWeight: 500 }}>IBKR</span>
             <span>{data.ibkrLastSync ? formatSyncTime(data.ibkrLastSync) : 'טרם סונכרן'}</span>
           </div>
         </div>
@@ -133,9 +133,9 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
       {/* Filters */}
       <div
         style={{
-          backgroundColor: '#1e293b',
+          backgroundColor: '#111621',
           borderRadius: '12px',
-          border: '1px solid rgba(71,85,105,0.4)',
+          border: '1px solid rgba(148,163,184,0.16)',
           padding: '16px',
           marginBottom: '16px',
           display: 'flex',
@@ -145,7 +145,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
         }}
       >
         {/* Type Filter */}
-        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0f172a', borderRadius: '8px', padding: '3px' }}>
+        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0a0d14', borderRadius: '8px', padding: '3px' }}>
           {(['all', 'long', 'short'] as const).map((f) => (
             <button
               key={f}
@@ -157,8 +157,8 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: 500,
-                backgroundColor: filter === f ? '#0284c7' : 'transparent',
-                color: filter === f ? 'white' : '#64748b',
+                backgroundColor: filter === f ? '#5470f0' : 'transparent',
+                color: filter === f ? 'white' : '#7d879a',
                 transition: 'all 0.15s',
               }}
             >
@@ -168,7 +168,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
         </div>
 
         {/* Status Filter */}
-        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0f172a', borderRadius: '8px', padding: '3px' }}>
+        <div style={{ display: 'flex', gap: '4px', backgroundColor: '#0a0d14', borderRadius: '8px', padding: '3px' }}>
           {(['all', 'closed', 'open'] as const).map((f) => (
             <button
               key={f}
@@ -180,8 +180,8 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                 cursor: 'pointer',
                 fontSize: '13px',
                 fontWeight: 500,
-                backgroundColor: statusFilter === f ? (f === 'open' ? '#d97706' : '#0284c7') : 'transparent',
-                color: statusFilter === f ? 'white' : '#64748b',
+                backgroundColor: statusFilter === f ? (f === 'open' ? '#d97706' : '#5470f0') : 'transparent',
+                color: statusFilter === f ? 'white' : '#7d879a',
                 transition: 'all 0.15s',
               }}
             >
@@ -192,7 +192,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
 
         {/* Search */}
         <div style={{ position: 'relative', flex: 1, minWidth: '160px' }}>
-          <Search size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#475569' }} />
+          <Search size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#565f73' }} />
           <input
             type="text"
             placeholder="חיפוש מניה..."
@@ -203,17 +203,17 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
         </div>
 
         {/* Date range */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: '#64748b', fontSize: '13px' }}>מ:</span>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={inputStyle} />
-          <span style={{ color: '#64748b', fontSize: '13px' }}>עד:</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={inputStyle} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, maxWidth: '100%' }}>
+          <span style={{ color: '#7d879a', fontSize: '13px' }}>מ:</span>
+          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ ...inputStyle, minWidth: 0, flex: 1 }} />
+          <span style={{ color: '#7d879a', fontSize: '13px' }}>עד:</span>
+          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ ...inputStyle, minWidth: 0, flex: 1 }} />
         </div>
 
         {(search || dateFrom || dateTo || filter !== 'all' || statusFilter !== 'all') && (
           <button
             onClick={() => { setSearch(''); setDateFrom(''); setDateTo(''); setFilter('all'); setStatusFilter('all'); }}
-            style={{ ...inputStyle, cursor: 'pointer', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+            style={{ ...inputStyle, cursor: 'pointer', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}
           >
             נקה פילטרים
           </button>
@@ -223,16 +223,16 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
       {/* Table */}
       <div
         style={{
-          backgroundColor: '#1e293b',
+          backgroundColor: '#111621',
           borderRadius: '12px',
-          border: '1px solid rgba(71,85,105,0.4)',
+          border: '1px solid rgba(148,163,184,0.16)',
           overflow: 'hidden',
         }}
       >
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#0f172a', borderBottom: '1px solid rgba(71,85,105,0.4)' }}>
+              <tr style={{ backgroundColor: '#0a0d14', borderBottom: '1px solid rgba(148,163,184,0.16)' }}>
                 <th style={thStyle}>#</th>
                 <th style={thStyle} onClick={() => handleSort('date')}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -286,24 +286,24 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                   <tr
                     key={trade.id}
                     style={{
-                      borderBottom: '1px solid rgba(71,85,105,0.2)',
-                      backgroundColor: trade.status === 'open' ? 'rgba(217,119,6,0.06)' : isProfit ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)',
+                      borderBottom: '1px solid rgba(148,163,184,0.08)',
+                      backgroundColor: trade.status === 'open' ? 'rgba(217,119,6,0.06)' : isProfit ? 'rgba(52,211,153,0.04)' : 'rgba(248,113,113,0.04)',
                       cursor: 'pointer',
                     }}
                     onClick={() => onView(trade.id)}
                   >
-                    <td style={{ padding: '10px 12px', color: '#475569' }}>{idx + 1}</td>
-                    <td style={{ padding: '10px 12px', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '10px 12px', color: '#565f73' }}>{idx + 1}</td>
+                    <td style={{ padding: '10px 12px', color: '#b6bdcc', whiteSpace: 'nowrap' }}>
                       {formatDate(trade.date)}
                     </td>
-                    <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 700, fontSize: '14px' }}>
+                    <td style={{ padding: '10px 12px', color: '#eef1f6', fontWeight: 700, fontSize: '14px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         {trade.stockName}
                         {trade.status === 'open' && (
                           <span style={{ fontSize: '10px', fontWeight: 600, color: '#d97706', backgroundColor: 'rgba(217,119,6,0.15)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.3)' }}>פתוחה</span>
                         )}
                         {trade.ibkrImported && (
-                          <span style={{ fontSize: '10px', color: '#64748b' }}>IBKR</span>
+                          <span style={{ fontSize: '10px', color: '#7d879a' }}>IBKR</span>
                         )}
                       </span>
                     </td>
@@ -314,51 +314,51 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                           borderRadius: '4px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          backgroundColor: trade.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                          color: trade.type === 'long' ? '#22c55e' : '#ef4444',
+                          backgroundColor: trade.type === 'long' ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)',
+                          color: trade.type === 'long' ? '#34d399' : '#f87171',
                         }}
                       >
                         {trade.type === 'long' ? 'לונג' : 'שורט'}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>
+                    <td style={{ padding: '10px 12px', color: '#dfe4ec' }}>
                       {formatCurrency(trade.avgEntryPrice)}
                     </td>
-                    <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>
+                    <td style={{ padding: '10px 12px', color: '#dfe4ec' }}>
                       {(isOpen ? getOpenShares(trade) : trade.totalShares).toLocaleString()}
                     </td>
                     <td
-                      style={{ padding: '10px 12px', color: isOpen ? '#64748b' : isProfit ? '#22c55e' : '#ef4444', fontWeight: 700 }}
+                      style={{ padding: '10px 12px', color: isOpen ? '#7d879a' : isProfit ? '#34d399' : '#f87171', fontWeight: 700 }}
                       title={isOpen ? 'פוזיציה פתוחה — אין P&L ממומש' : `גולמי: ${formatCurrency(trade.totalProfitLoss)} | עמלות: ${formatCurrency(trade.commissions ?? 0)}`}
                     >
                       {isOpen ? '—' : formatCurrency(netPL)}
                     </td>
-                    <td style={{ padding: '10px 12px', color: isOpen ? '#64748b' : isProfit ? '#22c55e' : '#ef4444' }}>
+                    <td style={{ padding: '10px 12px', color: isOpen ? '#7d879a' : isProfit ? '#34d399' : '#f87171' }}>
                       {isOpen ? '—' : formatPercent(trade.totalProfitLossPercent)}
                     </td>
                     <td
                       style={{
                         padding: '10px 12px',
-                        color: isOpen ? '#64748b' : isProfit ? '#86efac' : '#fca5a5',
+                        color: isOpen ? '#7d879a' : isProfit ? '#86efac' : '#fca5a5',
                         fontWeight: 600,
                       }}
                       title={isOpen ? 'פוזיציה פתוחה' : 'אחוז מגודל התיק הכולל בזמן העסקה'}
                     >
                       {isOpen ? '—' : formatPercent(getPLPercentOfPortfolio(data, trade))}
                     </td>
-                    <td style={{ padding: '10px 12px', color: isOpen ? '#64748b' : trade.rr >= 1 ? '#22c55e' : trade.rr >= 0 ? '#f59e0b' : '#ef4444' }}>
+                    <td style={{ padding: '10px 12px', color: isOpen ? '#7d879a' : trade.rr >= 1 ? '#34d399' : trade.rr >= 0 ? '#f59e0b' : '#f87171' }}>
                       {isOpen ? '—' : trade.rr.toFixed(2)}
                     </td>
                     {data.riskUnitValue > 0 && (() => {
                       const ru = getRiskUnits(trade, data.riskUnitValue);
                       return (
-                        <td style={{ padding: '10px 12px', color: isOpen ? '#64748b' : ru >= 0 ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                        <td style={{ padding: '10px 12px', color: isOpen ? '#7d879a' : ru >= 0 ? '#34d399' : '#f87171', fontWeight: 600 }}>
                           {isOpen ? '—' : (ru >= 0 ? '+' : '') + ru.toFixed(2) + 'R'}
                         </td>
                       );
                     })()}
                     <td
-                      style={{ padding: '10px 12px', color: '#64748b', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      style={{ padding: '10px 12px', color: '#7d879a', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                       title={trade.notes}
                     >
                       {trade.notes || '—'}
@@ -366,16 +366,16 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                     <td style={{ padding: '10px 12px' }}>
                       {isDeleting ? (
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
-                          <span style={{ fontSize: '12px', color: '#ef4444' }}>למחוק?</span>
+                          <span style={{ fontSize: '12px', color: '#f87171' }}>למחוק?</span>
                           <button
                             onClick={(e) => { e.stopPropagation(); onDelete(trade.id); setConfirmDelete(null); }}
-                            style={{ padding: '3px 8px', borderRadius: '4px', border: 'none', backgroundColor: '#ef4444', color: 'white', fontSize: '11px', cursor: 'pointer' }}
+                            style={{ padding: '3px 8px', borderRadius: '4px', border: 'none', backgroundColor: '#f87171', color: 'white', fontSize: '11px', cursor: 'pointer' }}
                           >
                             כן
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setConfirmDelete(null); }}
-                            style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(71,85,105,0.5)', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}
+                            style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(148,163,184,0.2)', backgroundColor: 'transparent', color: '#b6bdcc', fontSize: '11px', cursor: 'pointer' }}
                           >
                             לא
                           </button>
@@ -384,14 +384,14 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={(e) => { e.stopPropagation(); onView(trade.id); }}
-                            style={{ padding: '5px', borderRadius: '6px', border: '1px solid rgba(14,165,233,0.3)', backgroundColor: 'transparent', color: '#0ea5e9', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            style={{ padding: '5px', borderRadius: '6px', border: '1px solid rgba(110,139,255,0.3)', backgroundColor: 'transparent', color: '#6e8bff', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                             title="צפה בפרטים"
                           >
                             <Eye size={13} />
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); setConfirmDelete(trade.id); }}
-                            style={{ padding: '5px', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.3)', backgroundColor: 'transparent', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            style={{ padding: '5px', borderRadius: '6px', border: '1px solid rgba(248,113,113,0.3)', backgroundColor: 'transparent', color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                             title="מחק"
                           >
                             <Trash2 size={13} />
@@ -414,7 +414,7 @@ export default function TradeLog({ data, onEdit, onDelete, onAdd, onView }: Trad
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={13} style={{ textAlign: 'center', padding: '48px', color: '#475569' }}>
+                  <td colSpan={13} style={{ textAlign: 'center', padding: '48px', color: '#565f73' }}>
                     אין עסקאות להצגה
                   </td>
                 </tr>

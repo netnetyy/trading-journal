@@ -10,7 +10,7 @@ interface TradeDetailProps {
 }
 
 const BEHAVIORAL_LABELS: Record<string, { label: string; color: string }> = {
-  'good-trade': { label: 'עסקה טובה', color: '#22c55e' },
+  'good-trade': { label: 'עסקה טובה', color: '#34d399' },
   'self-analysis': { label: 'ניתוח עצמי', color: '#3b82f6' },
   'by-raz': { label: 'לפי רז', color: '#a78bfa' },
   'by-niv': { label: 'לפי ניב', color: '#fbbf24' },
@@ -38,54 +38,54 @@ const BEHAVIORAL_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 const card = (extra?: React.CSSProperties): React.CSSProperties => ({
-  backgroundColor: '#1e293b',
+  backgroundColor: '#111621',
   borderRadius: '12px',
-  border: '1px solid rgba(71,85,105,0.4)',
+  border: '1px solid rgba(148,163,184,0.16)',
   padding: '20px',
   ...extra,
 });
 
-const labelStyle: React.CSSProperties = { fontSize: '11px', color: '#475569', marginBottom: '4px' };
-const valueStyle: React.CSSProperties = { fontSize: '15px', fontWeight: 600, color: '#e2e8f0' };
+const labelStyle: React.CSSProperties = { fontSize: '11px', color: '#565f73', marginBottom: '4px' };
+const valueStyle: React.CSSProperties = { fontSize: '15px', fontWeight: 600, color: '#dfe4ec' };
 
 export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: TradeDetailProps) {
   const netPL = getNetProfitLoss(trade);
   const riskUnits = getRiskUnits(trade, riskUnitValue);
   const isProfit = netPL >= 0;
-  const plColor = isProfit ? '#22c55e' : '#ef4444';
+  const plColor = isProfit ? '#34d399' : '#f87171';
   const commissions = trade.commissions ?? 0;
 
   return (
-    <div style={{ padding: '28px', direction: 'rtl', maxWidth: '860px' }}>
+    <div className="page" style={{ direction: 'rtl', maxWidth: '860px' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+      <div className="wrap-sm" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <button
             onClick={onBack}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontSize: '14px', padding: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#7d879a', fontSize: '14px', padding: 0 }}
           >
             <ArrowRight size={16} /> חזרה
           </button>
-          <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(71,85,105,0.4)' }} />
+          <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(148,163,184,0.16)' }} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#f1f5f9', margin: 0 }}>{trade.stockName}</h1>
+              <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#eef1f6', margin: 0 }}>{trade.stockName}</h1>
               <span style={{
                 padding: '3px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 700,
-                backgroundColor: trade.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
-                color: trade.type === 'long' ? '#22c55e' : '#ef4444',
+                backgroundColor: trade.type === 'long' ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)',
+                color: trade.type === 'long' ? '#34d399' : '#f87171',
               }}>
                 {trade.type === 'long' ? 'לונג' : 'שורט'}
               </span>
-              <span style={{ fontSize: '13px', color: '#475569' }}>#{trade.serialNumber}</span>
+              <span style={{ fontSize: '13px', color: '#565f73' }}>#{trade.serialNumber}</span>
             </div>
-            <div style={{ color: '#64748b', fontSize: '13px', marginTop: '4px' }}>{formatDate(trade.date)}</div>
+            <div style={{ color: '#7d879a', fontSize: '13px', marginTop: '4px' }}>{formatDate(trade.date)}</div>
           </div>
         </div>
         <button
           onClick={() => onEdit(trade.id)}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+          style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#5470f0', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 16px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
         >
           <Edit2 size={14} /> ערוך עסקה
         </button>
@@ -94,19 +94,19 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
       {/* P&L Banner */}
       <div style={{
         ...card({ marginBottom: '20px', padding: '18px 24px' }),
-        backgroundColor: isProfit ? 'rgba(34,197,94,0.07)' : 'rgba(239,68,68,0.07)',
-        border: `1px solid ${isProfit ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+        backgroundColor: isProfit ? 'rgba(52,211,153,0.07)' : 'rgba(248,113,113,0.07)',
+        border: `1px solid ${isProfit ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: isProfit ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {isProfit ? <TrendingUp size={20} color="#22c55e" /> : <TrendingDown size={20} color="#ef4444" />}
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: isProfit ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {isProfit ? <TrendingUp size={20} color="#34d399" /> : <TrendingDown size={20} color="#f87171" />}
           </div>
           <div>
-            <div style={{ fontSize: '11px', color: '#64748b' }}>רווח/הפסד נטו</div>
+            <div style={{ fontSize: '11px', color: '#7d879a' }}>רווח/הפסד נטו</div>
             <div style={{ fontSize: '26px', fontWeight: 800, color: plColor }}>{formatCurrency(netPL)}</div>
             {commissions > 0 && (
-              <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+              <div style={{ fontSize: '11px', color: '#b6bdcc', marginTop: '2px' }}>
                 גולמי: {formatCurrency(trade.totalProfitLoss)} | עמלות: {formatCurrency(commissions)}
               </div>
             )}
@@ -115,46 +115,46 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
         <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
           {[
             { label: '% מהעסקה', val: formatPercent(trade.totalProfitLossPercent), color: plColor },
-            { label: 'R/R', val: trade.rr.toFixed(2), color: trade.rr >= 1 ? '#22c55e' : trade.rr >= 0 ? '#f59e0b' : '#ef4444' },
-            ...(riskUnitValue > 0 ? [{ label: 'יחידות סיכון', val: (riskUnits >= 0 ? '+' : '') + riskUnits.toFixed(2) + 'R', color: riskUnits >= 0 ? '#22c55e' : '#ef4444' }] : []),
-            { label: 'כניסה ממוצעת', val: formatCurrency(trade.avgEntryPrice), color: '#e2e8f0' },
-            { label: 'סה"כ מניות', val: trade.totalShares.toLocaleString(), color: '#e2e8f0' },
-            { label: 'סה"כ השקעה', val: formatCurrency(trade.totalInvested), color: '#e2e8f0' },
+            { label: 'R/R', val: trade.rr.toFixed(2), color: trade.rr >= 1 ? '#34d399' : trade.rr >= 0 ? '#f59e0b' : '#f87171' },
+            ...(riskUnitValue > 0 ? [{ label: 'יחידות סיכון', val: (riskUnits >= 0 ? '+' : '') + riskUnits.toFixed(2) + 'R', color: riskUnits >= 0 ? '#34d399' : '#f87171' }] : []),
+            { label: 'כניסה ממוצעת', val: formatCurrency(trade.avgEntryPrice), color: '#dfe4ec' },
+            { label: 'סה"כ מניות', val: trade.totalShares.toLocaleString(), color: '#dfe4ec' },
+            { label: 'סה"כ השקעה', val: formatCurrency(trade.totalInvested), color: '#dfe4ec' },
           ].map((item) => (
             <div key={item.label}>
-              <div style={{ fontSize: '11px', color: '#475569', marginBottom: '2px' }}>{item.label}</div>
+              <div style={{ fontSize: '11px', color: '#565f73', marginBottom: '2px' }}>{item.label}</div>
               <div style={{ fontSize: '15px', fontWeight: 700, color: item.color }}>{item.val}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+      <div className="rg-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
 
         {/* Initial Entry */}
         <div style={card()}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>כניסה ראשונית</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#b6bdcc', marginTop: 0, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>כניסה ראשונית</h2>
+          <div className="rg-kpi" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
             <div><div style={labelStyle}>מחיר</div><div style={valueStyle}>{formatCurrency(trade.initialEntry.price)}</div></div>
             <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{trade.initialEntry.quantity.toLocaleString()}</div></div>
             <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(trade.initialEntry.totalAmount)}</div></div>
-            {trade.initialEntry.sl ? <div><div style={labelStyle}>Stop Loss</div><div style={{ ...valueStyle, color: '#ef4444' }}>{formatCurrency(trade.initialEntry.sl)}</div></div> : null}
-            {trade.initialEntry.tp ? <div><div style={labelStyle}>Take Profit</div><div style={{ ...valueStyle, color: '#22c55e' }}>{formatCurrency(trade.initialEntry.tp)}</div></div> : null}
+            {trade.initialEntry.sl ? <div><div style={labelStyle}>Stop Loss</div><div style={{ ...valueStyle, color: '#f87171' }}>{formatCurrency(trade.initialEntry.sl)}</div></div> : null}
+            {trade.initialEntry.tp ? <div><div style={labelStyle}>Take Profit</div><div style={{ ...valueStyle, color: '#34d399' }}>{formatCurrency(trade.initialEntry.tp)}</div></div> : null}
             {trade.initialEntry.risk ? <div><div style={labelStyle}>סיכון</div><div style={{ ...valueStyle, color: '#f59e0b' }}>{formatCurrency(trade.initialEntry.risk)}</div></div> : null}
           </div>
         </div>
 
         {/* Reinforcements */}
         <div style={card()}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#b6bdcc', marginTop: 0, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             חיזוקי פוזיציה ({trade.reinforcements.length})
           </h2>
           {trade.reinforcements.length === 0 ? (
-            <div style={{ color: '#475569', fontSize: '13px', paddingTop: '8px' }}>אין חיזוקים לעסקה זו</div>
+            <div style={{ color: '#565f73', fontSize: '13px', paddingTop: '8px' }}>אין חיזוקים לעסקה זו</div>
           ) : (
             trade.reinforcements.map((r, i) => (
-              <div key={i} style={{ display: 'flex', gap: '24px', padding: '10px 0', borderBottom: i < trade.reinforcements.length - 1 ? '1px solid rgba(71,85,105,0.2)' : 'none' }}>
-                <div style={{ minWidth: '20px', color: '#475569', fontSize: '12px', paddingTop: '2px' }}>#{i + 1}</div>
+              <div key={i} style={{ display: 'flex', gap: '24px', padding: '10px 0', borderBottom: i < trade.reinforcements.length - 1 ? '1px solid rgba(148,163,184,0.08)' : 'none' }}>
+                <div style={{ minWidth: '20px', color: '#565f73', fontSize: '12px', paddingTop: '2px' }}>#{i + 1}</div>
                 <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                   <div><div style={labelStyle}>מחיר</div><div style={valueStyle}>{formatCurrency(r.price)}</div></div>
                   <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{r.quantity.toLocaleString()}</div></div>
@@ -169,11 +169,11 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
 
       {/* Exits */}
       <div style={{ ...card(), marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#b6bdcc', marginTop: 0, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           מימושים ({trade.exits.length})
         </h2>
         {trade.exits.length === 0 ? (
-          <div style={{ color: '#475569', fontSize: '13px' }}>אין מימושים רשומים</div>
+          <div style={{ color: '#565f73', fontSize: '13px' }}>אין מימושים רשומים</div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
             {trade.exits.map((ex, i) => {
@@ -182,19 +182,19 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: '0',
                   padding: '14px 0',
-                  borderBottom: i < trade.exits.length - 1 ? '1px solid rgba(71,85,105,0.2)' : 'none',
+                  borderBottom: i < trade.exits.length - 1 ? '1px solid rgba(148,163,184,0.08)' : 'none',
                 }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: exProfit ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: exProfit ? '#22c55e' : '#ef4444', flexShrink: 0, marginLeft: '16px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: exProfit ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: exProfit ? '#34d399' : '#f87171', flexShrink: 0, marginLeft: '16px' }}>
                     {i + 1}
                   </div>
                   <div style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', flex: 1 }}>
                     <div><div style={labelStyle}>מחיר יציאה</div><div style={valueStyle}>{formatCurrency(ex.price)}</div></div>
                     <div><div style={labelStyle}>כמות</div><div style={valueStyle}>{ex.quantity.toLocaleString()}</div></div>
                     <div><div style={labelStyle}>סה"כ</div><div style={valueStyle}>{formatCurrency(ex.totalAmount)}</div></div>
-                    <div><div style={labelStyle}>רווח/הפסד</div><div style={{ ...valueStyle, color: exProfit ? '#22c55e' : '#ef4444', fontSize: '16px' }}>{formatCurrency(ex.profitLoss)}</div></div>
-                    <div><div style={labelStyle}>%</div><div style={{ ...valueStyle, color: exProfit ? '#22c55e' : '#ef4444' }}>{formatPercent(ex.profitLossPercent)}</div></div>
+                    <div><div style={labelStyle}>רווח/הפסד</div><div style={{ ...valueStyle, color: exProfit ? '#34d399' : '#f87171', fontSize: '16px' }}>{formatCurrency(ex.profitLoss)}</div></div>
+                    <div><div style={labelStyle}>%</div><div style={{ ...valueStyle, color: exProfit ? '#34d399' : '#f87171' }}>{formatPercent(ex.profitLossPercent)}</div></div>
                     {ex.date && <div><div style={labelStyle}>תאריך</div><div style={valueStyle}>{formatDate(ex.date)}</div></div>}
-                    {ex.notes && <div style={{ flex: 1, minWidth: '140px' }}><div style={labelStyle}>הערות</div><div style={{ ...valueStyle, color: '#94a3b8', fontWeight: 400, fontSize: '13px' }}>{ex.notes}</div></div>}
+                    {ex.notes && <div style={{ flex: 1, minWidth: '140px' }}><div style={labelStyle}>הערות</div><div style={{ ...valueStyle, color: '#b6bdcc', fontWeight: 400, fontSize: '13px' }}>{ex.notes}</div></div>}
                   </div>
                 </div>
               );
@@ -205,17 +205,17 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
 
       {/* Entry Reason / Exit Reason */}
       {(trade.entryReason || trade.exitReason) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <div className="rg-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
           {trade.entryReason && (
             <div style={card()}>
-              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>סיבת כניסה</h2>
-              <p style={{ margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.7' }}>{trade.entryReason}</p>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#b6bdcc', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>סיבת כניסה</h2>
+              <p style={{ margin: 0, color: '#cdd3de', fontSize: '14px', lineHeight: '1.7' }}>{trade.entryReason}</p>
             </div>
           )}
           {trade.exitReason && (
             <div style={card()}>
-              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>סיבת יציאה</h2>
-              <p style={{ margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.7' }}>{trade.exitReason}</p>
+              <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#b6bdcc', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>סיבת יציאה</h2>
+              <p style={{ margin: 0, color: '#cdd3de', fontSize: '14px', lineHeight: '1.7' }}>{trade.exitReason}</p>
             </div>
           )}
         </div>
@@ -223,21 +223,21 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
 
       {/* Conclusions */}
       {trade.conclusions && (
-        <div style={{ ...card(), marginBottom: '16px', backgroundColor: 'rgba(14,165,233,0.05)', border: '1px solid rgba(14,165,233,0.2)' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#0ea5e9', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>מסקנות ולקחים</h2>
-          <p style={{ margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.7' }}>{trade.conclusions}</p>
+        <div style={{ ...card(), marginBottom: '16px', backgroundColor: 'rgba(110,139,255,0.05)', border: '1px solid rgba(110,139,255,0.2)' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#6e8bff', marginTop: 0, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>מסקנות ולקחים</h2>
+          <p style={{ margin: 0, color: '#cdd3de', fontSize: '14px', lineHeight: '1.7' }}>{trade.conclusions}</p>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+      <div className="rg-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
 
         {/* Behavioral Tags */}
         {trade.behavioralTags.length > 0 && (
           <div style={card()}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>תגיות התנהגותיות</h2>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#b6bdcc', marginTop: 0, marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>תגיות התנהגותיות</h2>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {trade.behavioralTags.map((tag) => {
-                const info = BEHAVIORAL_LABELS[tag] ?? { label: tag, color: '#0ea5e9' };
+                const info = BEHAVIORAL_LABELS[tag] ?? { label: tag, color: '#6e8bff' };
                 return (
                   <span key={tag} style={{
                     padding: '5px 13px',
@@ -259,8 +259,8 @@ export default function TradeDetail({ trade, riskUnitValue, onBack, onEdit }: Tr
         {/* Notes */}
         {trade.notes && (
           <div style={card()}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8', marginTop: 0, marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>הערות</h2>
-            <p style={{ margin: 0, color: '#cbd5e1', fontSize: '14px', lineHeight: '1.7' }}>{trade.notes}</p>
+            <h2 style={{ fontSize: '14px', fontWeight: 600, color: '#b6bdcc', marginTop: 0, marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>הערות</h2>
+            <p style={{ margin: 0, color: '#cdd3de', fontSize: '14px', lineHeight: '1.7' }}>{trade.notes}</p>
           </div>
         )}
       </div>

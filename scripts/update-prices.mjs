@@ -46,7 +46,7 @@ async function fetchPrice(symbol) {
       `https://finnhub.io/api/v1/quote?symbol=${symbol.toUpperCase()}&token=${FINNHUB_API_KEY}`
     );
     const json = await res.json();
-    if (json.c && json.c > 0) return json.c;
+    if (json.c && json.c > 0) return { price: json.c, prevClose: json.pc > 0 ? json.pc : undefined };
     return null;
   } catch {
     return null;
@@ -82,11 +82,13 @@ async function main() {
   // Fetch current prices for all investments
   const updated = [...investments];
   for (const inv of updated) {
-    const price = await fetchPrice(inv.symbol);
-    if (price !== null) {
-      inv.currentPrice = price;
+    const quote = await fetchPrice(inv.symbol);
+    if (quote !== null) {
+      inv.currentPrice = quote.price;
+      // Previous session's close -- the app shows the daily change from it
+      if (quote.prevClose !== undefined) inv.prevClose = quote.prevClose;
       inv.lastPriceUpdate = new Date().toISOString();
-      console.log(`✓ ${inv.symbol}: ${price}`);
+      console.log(`✓ ${inv.symbol}: ${quote.price}`);
     } else {
       console.log(`✗ ${inv.symbol}: could not fetch price`);
     }

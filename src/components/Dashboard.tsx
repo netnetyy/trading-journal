@@ -38,19 +38,19 @@ interface DashboardProps {
 }
 
 const card = (style?: React.CSSProperties): React.CSSProperties => ({
-  backgroundColor: '#1e293b',
+  backgroundColor: '#111621',
   borderRadius: '12px',
-  border: '1px solid rgba(71,85,105,0.4)',
+  border: '1px solid rgba(148,163,184,0.16)',
   padding: '20px',
   ...style,
 });
 
 const inputStyle: React.CSSProperties = {
-  backgroundColor: '#0f172a',
-  border: '1px solid rgba(71,85,105,0.5)',
+  backgroundColor: '#0a0d14',
+  border: '1px solid rgba(148,163,184,0.2)',
   borderRadius: '8px',
   padding: '8px 12px',
-  color: '#e2e8f0',
+  color: '#dfe4ec',
   fontSize: '14px',
   outline: 'none',
   direction: 'rtl',
@@ -140,7 +140,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
     }
   };
 
-  const plColor = totalPL >= 0 ? '#22c55e' : '#ef4444';
+  const plColor = totalPL >= 0 ? '#34d399' : '#f87171';
   const plPercent = data.portfolioBaseValue > 0 ? (totalPL / data.portfolioBaseValue) * 100 : 0;
 
   const unreviewedCount = closedTrades.filter((t) => !t.conclusions?.trim()).length;
@@ -150,8 +150,8 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       title: 'ערך תיק כולל',
       value: formatCurrency(portfolioValue),
       icon: DollarSign,
-      color: '#0ea5e9',
-      bg: 'rgba(14,165,233,0.1)',
+      color: '#6e8bff',
+      bg: 'rgba(110,139,255,0.1)',
       editable: true,
     },
     {
@@ -160,15 +160,15 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       sub: formatPercent(plPercent) + ' מהבסיס',
       icon: totalPL >= 0 ? TrendingUp : TrendingDown,
       color: plColor,
-      bg: totalPL >= 0 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+      bg: totalPL >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
     },
     {
       title: 'אחוז הצלחה',
       value: winRate.toFixed(1) + '%',
       sub: `${closedTrades.filter((t) => t.totalProfitLoss > 0).length} מתוך ${closedTrades.length}`,
       icon: Percent,
-      color: winRate >= 50 ? '#22c55e' : '#f59e0b',
-      bg: winRate >= 50 ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+      color: winRate >= 50 ? '#34d399' : '#f59e0b',
+      bg: winRate >= 50 ? 'rgba(52,211,153,0.1)' : 'rgba(245,158,11,0.1)',
     },
     {
       title: 'עסקאות סגורות',
@@ -189,16 +189,16 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
   ];
 
   return (
-    <div style={{ padding: '28px', direction: 'rtl' }}>
+    <div className="page" style={{ direction: 'rtl' }}>
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>דשבורד</h1>
-        <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#eef1f6', margin: 0 }}>דשבורד</h1>
+        <p style={{ color: '#7d879a', fontSize: '14px', marginTop: '4px' }}>
           סקירת תיק ההשקעות שלך
         </p>
       </div>
 
       {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div className="rg-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {statCards.map((sc, i) => {
           const Icon = sc.icon;
           return (
@@ -206,14 +206,14 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>{sc.title}</span>
+                    <span style={{ fontSize: '12px', color: '#7d879a' }}>{sc.title}</span>
                     {sc.editable && (
                       <button
                         onClick={() => {
                           setEditPortfolioVal(portfolioValue.toFixed(2));
                           setShowEditPortfolio(true);
                         }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: '#475569', display: 'flex' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', color: '#565f73', display: 'flex' }}
                         title="ערוך ערך תיק"
                       >
                         <Edit2 size={11} />
@@ -222,7 +222,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                   </div>
                   <div style={{ fontSize: '22px', fontWeight: 700, color: sc.color }}>{sc.value}</div>
                   {sc.sub && (
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>{sc.sub}</div>
+                    <div style={{ fontSize: '12px', color: '#7d879a', marginTop: '4px' }}>{sc.sub}</div>
                   )}
                 </div>
                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: sc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -235,11 +235,11 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       </div>
 
       {/* Trading Settings Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+      <div className="rg-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
         {/* Risk Unit Setting */}
         <div style={card({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' })}>
           <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>יחידת סיכון (R)</div>
+            <div style={{ fontSize: '12px', color: '#7d879a', marginBottom: '4px' }}>יחידת סיכון (R)</div>
             {editingRiskUnit ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input
@@ -254,18 +254,18 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                     if (e.key === 'Escape') setEditingRiskUnit(false);
                   }}
                 />
-                <button onClick={() => { const v = parseFloat(riskUnitVal); if (!isNaN(v) && v > 0) { onSetRiskUnit(v); setEditingRiskUnit(false); } }} style={{ backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' }}>שמור</button>
-                <button onClick={() => setEditingRiskUnit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={14} /></button>
+                <button onClick={() => { const v = parseFloat(riskUnitVal); if (!isNaN(v) && v > 0) { onSetRiskUnit(v); setEditingRiskUnit(false); } }} style={{ backgroundColor: '#5470f0', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' }}>שמור</button>
+                <button onClick={() => setEditingRiskUnit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7d879a' }}><X size={14} /></button>
               </div>
             ) : (
               <div style={{ fontSize: '20px', fontWeight: 700, color: '#f59e0b' }}>
                 {formatCurrency(data.riskUnitValue ?? 100)}
-                <span style={{ fontSize: '12px', color: '#64748b', marginRight: '6px' }}>לכל R</span>
+                <span style={{ fontSize: '12px', color: '#7d879a', marginRight: '6px' }}>לכל R</span>
               </div>
             )}
           </div>
           {!editingRiskUnit && (
-            <button onClick={() => { setRiskUnitVal(String(data.riskUnitValue ?? 100)); setEditingRiskUnit(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}>
+            <button onClick={() => { setRiskUnitVal(String(data.riskUnitValue ?? 100)); setEditingRiskUnit(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#565f73' }}>
               <Edit2 size={14} />
             </button>
           )}
@@ -274,7 +274,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
         {/* Commission Setting */}
         <div style={card({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' })}>
           <div>
-            <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>עמלה ברירת מחדל לפעולה</div>
+            <div style={{ fontSize: '12px', color: '#7d879a', marginBottom: '4px' }}>עמלה ברירת מחדל לפעולה</div>
             {editingCommission ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <input
@@ -290,18 +290,18 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                     if (e.key === 'Escape') setEditingCommission(false);
                   }}
                 />
-                <button onClick={() => { const v = parseFloat(commissionVal); if (!isNaN(v) && v >= 0) { onSetDefaultCommission(v); setEditingCommission(false); } }} style={{ backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' }}>שמור</button>
-                <button onClick={() => setEditingCommission(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={14} /></button>
+                <button onClick={() => { const v = parseFloat(commissionVal); if (!isNaN(v) && v >= 0) { onSetDefaultCommission(v); setEditingCommission(false); } }} style={{ backgroundColor: '#5470f0', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer' }}>שמור</button>
+                <button onClick={() => setEditingCommission(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7d879a' }}><X size={14} /></button>
               </div>
             ) : (
               <div style={{ fontSize: '20px', fontWeight: 700, color: '#a78bfa' }}>
                 {formatCurrency(data.defaultCommissionPerAction ?? 2.5)}
-                <span style={{ fontSize: '12px', color: '#64748b', marginRight: '6px' }}>לקנייה / מכירה</span>
+                <span style={{ fontSize: '12px', color: '#7d879a', marginRight: '6px' }}>לקנייה / מכירה</span>
               </div>
             )}
           </div>
           {!editingCommission && (
-            <button onClick={() => { setCommissionVal(String(data.defaultCommissionPerAction ?? 2.5)); setEditingCommission(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569' }}>
+            <button onClick={() => { setCommissionVal(String(data.defaultCommissionPerAction ?? 2.5)); setEditingCommission(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#565f73' }}>
               <Edit2 size={14} />
             </button>
           )}
@@ -312,41 +312,41 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       <div style={{ ...card(), marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>עקומת הון כוללת</h2>
-            <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>ערך התיק לאורך זמן — כולל הפקדות ורווחים</p>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#eef1f6', margin: 0 }}>עקומת הון כוללת</h2>
+            <p style={{ fontSize: '12px', color: '#565f73', margin: '4px 0 0' }}>ערך התיק לאורך זמן — כולל הפקדות ורווחים</p>
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: '#0ea5e9' }}>{formatCurrency(portfolioValue)}</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#6e8bff' }}>{formatCurrency(portfolioValue)}</div>
         </div>
         {equityCurve.length > 1 ? (
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={equityCurve} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
               <defs>
                 <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="#6e8bff" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#6e8bff" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.3)" />
-              <XAxis dataKey="date" tickFormatter={(v) => formatDate(v)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={(v) => '$' + v.toLocaleString()} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} width={80} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.12)" />
+              <XAxis dataKey="date" tickFormatter={(v) => formatDate(v)} tick={{ fill: '#7d879a', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => '$' + v.toLocaleString()} tick={{ fill: '#7d879a', fontSize: 11 }} axisLine={false} tickLine={false} width={80} />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#e2e8f0' }}
+                contentStyle={{ backgroundColor: '#111621', border: '1px solid rgba(148,163,184,0.2)', borderRadius: '8px', color: '#dfe4ec' }}
                 formatter={(value, _name, props) => [
                   formatCurrency(Number(value)),
                   props.payload?.label === 'הפקדה' ? 'הפקדה + עדכון' : 'ערך תיק',
                 ]}
                 labelFormatter={(label) => formatDate(label)}
               />
-              <Area type="monotone" dataKey="value" stroke="#0ea5e9" strokeWidth={2} fill="url(#equityGrad)" dot={(props) => {
+              <Area type="monotone" dataKey="value" stroke="#6e8bff" strokeWidth={2} fill="url(#equityGrad)" dot={(props) => {
                 if (props.payload?.label === 'הפקדה') {
-                  return <circle key={props.key} cx={props.cx} cy={props.cy} r={5} fill="#fbbf24" stroke="#1e293b" strokeWidth={2} />;
+                  return <circle key={props.key} cx={props.cx} cy={props.cy} r={5} fill="#fbbf24" stroke="#111621" strokeWidth={2} />;
                 }
                 return <circle key={props.key} cx={0} cy={0} r={0} fill="none" />;
               }} />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569' }}>
+          <div style={{ height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#565f73' }}>
             <Activity size={40} style={{ opacity: 0.3 }} />
             <span style={{ marginRight: '12px' }}>אין מספיק נתונים להצגת גרף</span>
           </div>
@@ -354,7 +354,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
         {equityCurve.some((p) => p.label === 'הפקדה') && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px' }}>
             <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#fbbf24' }} />
-            <span style={{ fontSize: '11px', color: '#64748b' }}>נקודה צהובה = הפקדת הון</span>
+            <span style={{ fontSize: '11px', color: '#7d879a' }}>נקודה צהובה = הפקדת הון</span>
           </div>
         )}
       </div>
@@ -363,10 +363,10 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       <div style={{ ...card(), marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>רווח/הפסד מעסקאות</h2>
-            <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>תנועת P&L מצטברת מעסקאות בלבד — ללא הפקדות</p>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#eef1f6', margin: 0 }}>רווח/הפסד מעסקאות</h2>
+            <p style={{ fontSize: '12px', color: '#565f73', margin: '4px 0 0' }}>תנועת P&L מצטברת מעסקאות בלבד — ללא הפקדות</p>
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 700, color: totalPL >= 0 ? '#22c55e' : '#ef4444' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: totalPL >= 0 ? '#34d399' : '#f87171' }}>
             {formatCurrency(totalPL)}
           </div>
         </div>
@@ -375,34 +375,34 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
             <AreaChart data={plCurve} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
               <defs>
                 <linearGradient id="plGradPos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
+                  <stop offset="5%" stopColor="#34d399" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#34d399" stopOpacity={0.02} />
                 </linearGradient>
                 <linearGradient id="plGradNeg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.02} />
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.25} />
+                  <stop offset="5%" stopColor="#f87171" stopOpacity={0.02} />
+                  <stop offset="95%" stopColor="#f87171" stopOpacity={0.25} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.3)" />
-              <XAxis dataKey="date" tickFormatter={(v) => formatDate(v)} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={(v) => (v >= 0 ? '+$' : '-$') + Math.abs(v).toLocaleString()} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
-              <ReferenceLine y={0} stroke="rgba(71,85,105,0.6)" strokeDasharray="4 4" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.12)" />
+              <XAxis dataKey="date" tickFormatter={(v) => formatDate(v)} tick={{ fill: '#7d879a', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tickFormatter={(v) => (v >= 0 ? '+$' : '-$') + Math.abs(v).toLocaleString()} tick={{ fill: '#7d879a', fontSize: 11 }} axisLine={false} tickLine={false} width={86} />
+              <ReferenceLine y={0} stroke="rgba(148,163,184,0.24)" strokeDasharray="4 4" />
               <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', color: '#e2e8f0' }}
+                contentStyle={{ backgroundColor: '#111621', border: '1px solid rgba(148,163,184,0.2)', borderRadius: '8px', color: '#dfe4ec' }}
                 formatter={(value) => [formatCurrency(Number(value)), 'P&L מצטבר']}
                 labelFormatter={(label) => formatDate(label)}
               />
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke={totalPL >= 0 ? '#22c55e' : '#ef4444'}
+                stroke={totalPL >= 0 ? '#34d399' : '#f87171'}
                 strokeWidth={2}
                 fill={totalPL >= 0 ? 'url(#plGradPos)' : 'url(#plGradNeg)'}
               />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569' }}>
+          <div style={{ height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#565f73' }}>
             <Activity size={40} style={{ opacity: 0.3 }} />
             <span style={{ marginRight: '12px' }}>אין מספיק נתונים להצגת גרף</span>
           </div>
@@ -414,15 +414,15 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
         <div style={{ ...card(), marginBottom: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
-              <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#eef1f6', margin: 0 }}>
                 פוזיציות פתוחות
                 <span style={{ marginRight: '8px', fontSize: '12px', fontWeight: 600, color: '#d97706', backgroundColor: 'rgba(217,119,6,0.15)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.3)' }}>{openPositions.length}</span>
               </h2>
-              <p style={{ fontSize: '12px', color: '#475569', margin: '4px 0 0' }}>P&L לא ממומש — לפי מחיר שוק נוכחי</p>
+              <p style={{ fontSize: '12px', color: '#565f73', margin: '4px 0 0' }}>P&L לא ממומש — לפי מחיר שוק נוכחי</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {priceStatus && (
-                <span style={{ fontSize: '12px', color: priceStatus.startsWith('שגיאה') || priceStatus.includes('בדוק') ? '#ef4444' : '#22c55e' }}>
+                <span style={{ fontSize: '12px', color: priceStatus.startsWith('שגיאה') || priceStatus.includes('בדוק') ? '#f87171' : '#34d399' }}>
                   {priceStatus}
                 </span>
               )}
@@ -436,7 +436,7 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                   }
                 }}
                 disabled={loadingPrices}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(71,85,105,0.2)', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.4)', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: loadingPrices ? 'default' : 'pointer', opacity: loadingPrices ? 0.6 : 1 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(148,163,184,0.08)', color: '#b6bdcc', border: '1px solid rgba(148,163,184,0.16)', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: loadingPrices ? 'default' : 'pointer', opacity: loadingPrices ? 0.6 : 1 }}
               >
                 <RefreshCw size={13} />
                 {loadingPrices ? 'טוען...' : 'רענן מחירים'}
@@ -446,9 +446,9 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(71,85,105,0.4)' }}>
+                <tr style={{ borderBottom: '1px solid rgba(148,163,184,0.16)' }}>
                   {['מניה', 'סוג', 'כמות', 'כניסה ממוצעת', 'מחיר נוכחי', 'P&L לא ממומש', '%'].map((h) => (
-                    <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 500, textAlign: 'right' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', color: '#7d879a', fontWeight: 500, textAlign: 'right' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -468,27 +468,27 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                   return (
                     <tr
                       key={pos.id}
-                      style={{ borderBottom: '1px solid rgba(71,85,105,0.2)', backgroundColor: unrealizedPL !== null ? (isGain ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)') : 'rgba(217,119,6,0.04)', cursor: 'pointer' }}
+                      style={{ borderBottom: '1px solid rgba(148,163,184,0.08)', backgroundColor: unrealizedPL !== null ? (isGain ? 'rgba(52,211,153,0.05)' : 'rgba(248,113,113,0.05)') : 'rgba(217,119,6,0.04)', cursor: 'pointer' }}
                       onClick={() => onNavigate('edit-trade', pos.id)}
                     >
-                      <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 700 }}>
+                      <td style={{ padding: '10px 12px', color: '#eef1f6', fontWeight: 700 }}>
                         {pos.stockName}
-                        {pos.ibkrImported && <span style={{ marginRight: '6px', fontSize: '10px', color: '#64748b' }}>IBKR</span>}
+                        {pos.ibkrImported && <span style={{ marginRight: '6px', fontSize: '10px', color: '#7d879a' }}>IBKR</span>}
                       </td>
                       <td style={{ padding: '10px 12px' }}>
-                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: pos.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: pos.type === 'long' ? '#22c55e' : '#ef4444' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: pos.type === 'long' ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)', color: pos.type === 'long' ? '#34d399' : '#f87171' }}>
                           {pos.type === 'long' ? 'לונג' : 'שורט'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{openShares.toLocaleString()}</td>
-                      <td style={{ padding: '10px 12px', color: '#e2e8f0' }}>{formatCurrency(pos.avgEntryPrice)}</td>
-                      <td style={{ padding: '10px 12px', color: currentPrice ? '#f1f5f9' : '#475569' }}>
+                      <td style={{ padding: '10px 12px', color: '#dfe4ec' }}>{openShares.toLocaleString()}</td>
+                      <td style={{ padding: '10px 12px', color: '#dfe4ec' }}>{formatCurrency(pos.avgEntryPrice)}</td>
+                      <td style={{ padding: '10px 12px', color: currentPrice ? '#eef1f6' : '#565f73' }}>
                         {currentPrice ? formatCurrency(currentPrice) : '—'}
                       </td>
-                      <td style={{ padding: '10px 12px', color: unrealizedPL !== null ? (isGain ? '#22c55e' : '#ef4444') : '#475569', fontWeight: unrealizedPL !== null ? 700 : 400 }}>
+                      <td style={{ padding: '10px 12px', color: unrealizedPL !== null ? (isGain ? '#34d399' : '#f87171') : '#565f73', fontWeight: unrealizedPL !== null ? 700 : 400 }}>
                         {unrealizedPL !== null ? formatCurrency(unrealizedPL) : '—'}
                       </td>
-                      <td style={{ padding: '10px 12px', color: unrealizedPct !== null ? (isGain ? '#22c55e' : '#ef4444') : '#475569' }}>
+                      <td style={{ padding: '10px 12px', color: unrealizedPct !== null ? (isGain ? '#34d399' : '#f87171') : '#565f73' }}>
                         {unrealizedPct !== null ? formatPercent(unrealizedPct) : '—'}
                       </td>
                     </tr>
@@ -499,10 +499,10 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
           </div>
           {!hasFinnhubKey && !showFinnhubInput && (
             <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', color: '#475569' }}>להצגת מחיר חי נדרש Finnhub API Key</span>
+              <span style={{ fontSize: '12px', color: '#565f73' }}>להצגת מחיר חי נדרש Finnhub API Key</span>
               <button
                 onClick={() => setShowFinnhubInput(true)}
-                style={{ fontSize: '12px', color: '#0ea5e9', background: 'none', border: '1px solid rgba(14,165,233,0.4)', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}
+                style={{ fontSize: '12px', color: '#6e8bff', background: 'none', border: '1px solid rgba(110,139,255,0.4)', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}
               >
                 הוסף מפתח
               </button>
@@ -538,11 +538,11 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                     fetchOpenPrices();
                   }
                 }}
-                style={{ backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer' }}
+                style={{ backgroundColor: '#5470f0', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '13px', cursor: 'pointer' }}
               >
                 שמור
               </button>
-              <button onClick={() => setShowFinnhubInput(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+              <button onClick={() => setShowFinnhubInput(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7d879a' }}>
                 <X size={14} />
               </button>
             </div>
@@ -551,22 +551,22 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       )}
 
       {/* Two columns: Recent Trades + Deposits */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
+      <div className="rg-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '20px' }}>
 
         {/* Recent Trades */}
         <div style={card()}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>עסקאות אחרונות</h2>
-            <button onClick={() => onNavigate('trades')} style={{ fontSize: '13px', color: '#0ea5e9', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#eef1f6', margin: 0 }}>עסקאות אחרונות</h2>
+            <button onClick={() => onNavigate('trades')} style={{ fontSize: '13px', color: '#6e8bff', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}>
               הצג הכל
             </button>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(71,85,105,0.4)' }}>
+                <tr style={{ borderBottom: '1px solid rgba(148,163,184,0.16)' }}>
                   {['תאריך', 'מניה', 'סוג', 'רווח/הפסד', '%'].map((h) => (
-                    <th key={h} style={{ padding: '8px 12px', color: '#64748b', fontWeight: 500, textAlign: 'right' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', color: '#7d879a', fontWeight: 500, textAlign: 'right' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -577,27 +577,27 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                   return (
                     <tr
                       key={trade.id}
-                      style={{ borderBottom: '1px solid rgba(71,85,105,0.2)', backgroundColor: isProfit ? 'rgba(34,197,94,0.04)' : 'rgba(239,68,68,0.04)', cursor: 'pointer' }}
+                      style={{ borderBottom: '1px solid rgba(148,163,184,0.08)', backgroundColor: isProfit ? 'rgba(52,211,153,0.04)' : 'rgba(248,113,113,0.04)', cursor: 'pointer' }}
                       onClick={() => onNavigate('edit-trade', trade.id)}
                     >
-                      <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{formatDate(trade.date)}</td>
-                      <td style={{ padding: '10px 12px', color: '#f1f5f9', fontWeight: 600 }}>{trade.stockName}</td>
+                      <td style={{ padding: '10px 12px', color: '#b6bdcc' }}>{formatDate(trade.date)}</td>
+                      <td style={{ padding: '10px 12px', color: '#eef1f6', fontWeight: 600 }}>{trade.stockName}</td>
                       <td style={{ padding: '10px 12px' }}>
-                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: trade.type === 'long' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)', color: trade.type === 'long' ? '#22c55e' : '#ef4444' }}>
+                        <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, backgroundColor: trade.type === 'long' ? 'rgba(52,211,153,0.15)' : 'rgba(248,113,113,0.15)', color: trade.type === 'long' ? '#34d399' : '#f87171' }}>
                           {trade.type === 'long' ? 'לונג' : 'שורט'}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#34d399' : '#f87171', fontWeight: 600 }}>
                         {formatCurrency(netPL)}
                       </td>
-                      <td style={{ padding: '10px 12px', color: isProfit ? '#22c55e' : '#ef4444' }}>
+                      <td style={{ padding: '10px 12px', color: isProfit ? '#34d399' : '#f87171' }}>
                         {formatPercent(trade.totalProfitLossPercent)}
                       </td>
                     </tr>
                   );
                 })}
                 {recentTrades.length === 0 && (
-                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#475569' }}>אין עסקאות עדיין</td></tr>
+                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: '#565f73' }}>אין עסקאות עדיין</td></tr>
                 )}
               </tbody>
             </table>
@@ -607,46 +607,46 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
         {/* Deposits Panel */}
         <div style={card({ display: 'flex', flexDirection: 'column' })}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#f1f5f9', margin: 0 }}>הפקדות הון</h2>
+            <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#eef1f6', margin: 0 }}>הפקדות הון</h2>
             <button
               onClick={() => setShowAddDeposit(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '7px', padding: '6px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: '#5470f0', color: 'white', border: 'none', borderRadius: '7px', padding: '6px 12px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
             >
               <Plus size={13} /> הוסף
             </button>
           </div>
 
           {/* Summary */}
-          <div style={{ backgroundColor: '#0f172a', borderRadius: '8px', padding: '12px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: '#64748b', fontSize: '13px' }}>סה"כ הופקד</span>
-            <span style={{ color: '#0ea5e9', fontWeight: 700, fontSize: '14px' }}>{formatCurrency(data.portfolioBaseValue)}</span>
+          <div style={{ backgroundColor: '#0a0d14', borderRadius: '8px', padding: '12px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#7d879a', fontSize: '13px' }}>סה"כ הופקד</span>
+            <span style={{ color: '#6e8bff', fontWeight: 700, fontSize: '14px' }}>{formatCurrency(data.portfolioBaseValue)}</span>
           </div>
 
           {/* Deposits list */}
           <div style={{ flex: 1, overflowY: 'auto', maxHeight: '260px' }}>
             {[...data.deposits].sort((a, b) => b.date.localeCompare(a.date)).map((dep) => (
-              <div key={dep.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(71,85,105,0.2)' }}>
+              <div key={dep.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
                 <div>
-                  <div style={{ color: '#22c55e', fontWeight: 600, fontSize: '14px' }}>+{formatCurrency(dep.amount)}</div>
-                  <div style={{ color: '#475569', fontSize: '11px', marginTop: '2px' }}>
+                  <div style={{ color: '#34d399', fontWeight: 600, fontSize: '14px' }}>+{formatCurrency(dep.amount)}</div>
+                  <div style={{ color: '#565f73', fontSize: '11px', marginTop: '2px' }}>
                     {formatDate(dep.date)}{dep.note ? ` · ${dep.note}` : ''}
                   </div>
                 </div>
                 {confirmDeleteDeposit === dep.id ? (
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', color: '#ef4444' }}>למחוק?</span>
-                    <button onClick={() => { onDeleteDeposit(dep.id); setConfirmDeleteDeposit(null); }} style={{ padding: '3px 8px', borderRadius: '4px', border: 'none', backgroundColor: '#ef4444', color: 'white', fontSize: '11px', cursor: 'pointer' }}>כן</button>
-                    <button onClick={() => setConfirmDeleteDeposit(null)} style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(71,85,105,0.5)', backgroundColor: 'transparent', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}>לא</button>
+                    <span style={{ fontSize: '11px', color: '#f87171' }}>למחוק?</span>
+                    <button onClick={() => { onDeleteDeposit(dep.id); setConfirmDeleteDeposit(null); }} style={{ padding: '3px 8px', borderRadius: '4px', border: 'none', backgroundColor: '#f87171', color: 'white', fontSize: '11px', cursor: 'pointer' }}>כן</button>
+                    <button onClick={() => setConfirmDeleteDeposit(null)} style={{ padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(148,163,184,0.2)', backgroundColor: 'transparent', color: '#b6bdcc', fontSize: '11px', cursor: 'pointer' }}>לא</button>
                   </div>
                 ) : (
-                  <button onClick={() => setConfirmDeleteDeposit(dep.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#475569', padding: '4px', display: 'flex' }}>
+                  <button onClick={() => setConfirmDeleteDeposit(dep.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#565f73', padding: '4px', display: 'flex' }}>
                     <Trash2 size={13} />
                   </button>
                 )}
               </div>
             ))}
             {data.deposits.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '32px 0', color: '#475569', fontSize: '13px' }}>אין הפקדות עדיין</div>
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#565f73', fontSize: '13px' }}>אין הפקדות עדיין</div>
             )}
           </div>
         </div>
@@ -655,16 +655,16 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       {/* Edit Portfolio Modal */}
       {showEditPortfolio && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', border: '1px solid rgba(71,85,105,0.5)', padding: '28px', width: '360px', direction: 'rtl' }}>
+          <div className="dialog-fit" style={{ backgroundColor: '#111621', borderRadius: '16px', border: '1px solid rgba(148,163,184,0.2)', padding: '28px', width: '360px', direction: 'rtl' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, color: '#f1f5f9', fontSize: '18px' }}>עריכת ערך התיק</h3>
-              <button onClick={() => setShowEditPortfolio(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+              <h3 style={{ margin: 0, color: '#eef1f6', fontSize: '18px' }}>עריכת ערך התיק</h3>
+              <button onClick={() => setShowEditPortfolio(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7d879a' }}><X size={20} /></button>
             </div>
-            <p style={{ color: '#64748b', fontSize: '13px', marginTop: 0, marginBottom: '16px' }}>
+            <p style={{ color: '#7d879a', fontSize: '13px', marginTop: 0, marginBottom: '16px' }}>
               הכנס את ערך התיק הנוכחי כפי שמופיע אצל הברוקר שלך. הבסיס יתעדכן בהתאם.
             </p>
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>ערך תיק כולל ($)</label>
+              <label style={{ display: 'block', color: '#b6bdcc', fontSize: '13px', marginBottom: '6px' }}>ערך תיק כולל ($)</label>
               <input
                 type="number"
                 value={editPortfolioVal}
@@ -674,15 +674,15 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
                 autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleSavePortfolio()}
               />
-              <div style={{ fontSize: '12px', color: '#475569', marginTop: '6px' }}>
+              <div style={{ fontSize: '12px', color: '#565f73', marginTop: '6px' }}>
                 ערך נוכחי: {formatCurrency(portfolioValue)}
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={handleSavePortfolio} style={{ flex: 1, backgroundColor: '#0284c7', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={handleSavePortfolio} style={{ flex: 1, backgroundColor: '#5470f0', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
                 שמור
               </button>
-              <button onClick={() => setShowEditPortfolio(false)} style={{ flex: 1, backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', padding: '10px', fontSize: '14px', cursor: 'pointer' }}>
+              <button onClick={() => setShowEditPortfolio(false)} style={{ flex: 1, backgroundColor: 'transparent', color: '#b6bdcc', border: '1px solid rgba(148,163,184,0.2)', borderRadius: '8px', padding: '10px', fontSize: '14px', cursor: 'pointer' }}>
                 ביטול
               </button>
             </div>
@@ -693,30 +693,30 @@ export default function Dashboard({ data, onNavigate, onSetPortfolioBase, onAddD
       {/* Add Deposit Modal */}
       {showAddDeposit && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', border: '1px solid rgba(71,85,105,0.5)', padding: '28px', width: '360px', direction: 'rtl' }}>
+          <div className="dialog-fit" style={{ backgroundColor: '#111621', borderRadius: '16px', border: '1px solid rgba(148,163,184,0.2)', padding: '28px', width: '360px', direction: 'rtl' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ margin: 0, color: '#f1f5f9', fontSize: '18px' }}>הוספת הפקדה</h3>
-              <button onClick={() => setShowAddDeposit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+              <h3 style={{ margin: 0, color: '#eef1f6', fontSize: '18px' }}>הוספת הפקדה</h3>
+              <button onClick={() => setShowAddDeposit(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7d879a' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
               <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>סכום ($)</label>
+                <label style={{ display: 'block', color: '#b6bdcc', fontSize: '13px', marginBottom: '6px' }}>סכום ($)</label>
                 <input type="number" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} style={inputStyle} placeholder="לדוגמה: 2000" autoFocus />
               </div>
               <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>תאריך</label>
+                <label style={{ display: 'block', color: '#b6bdcc', fontSize: '13px', marginBottom: '6px' }}>תאריך</label>
                 <input type="date" value={depositDate} onChange={(e) => setDepositDate(e.target.value)} style={inputStyle} />
               </div>
               <div>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '6px' }}>הערה (אופציונלי)</label>
+                <label style={{ display: 'block', color: '#b6bdcc', fontSize: '13px', marginBottom: '6px' }}>הערה (אופציונלי)</label>
                 <input type="text" value={depositNote} onChange={(e) => setDepositNote(e.target.value)} style={inputStyle} placeholder="לדוגמה: הפקדה חודשית" onKeyDown={(e) => e.key === 'Enter' && handleSaveDeposit()} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={handleSaveDeposit} style={{ flex: 1, backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
+              <button onClick={handleSaveDeposit} style={{ flex: 1, backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
                 הוסף הפקדה
               </button>
-              <button onClick={() => setShowAddDeposit(false)} style={{ flex: 1, backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid rgba(71,85,105,0.5)', borderRadius: '8px', padding: '10px', fontSize: '14px', cursor: 'pointer' }}>
+              <button onClick={() => setShowAddDeposit(false)} style={{ flex: 1, backgroundColor: 'transparent', color: '#b6bdcc', border: '1px solid rgba(148,163,184,0.2)', borderRadius: '8px', padding: '10px', fontSize: '14px', cursor: 'pointer' }}>
                 ביטול
               </button>
             </div>

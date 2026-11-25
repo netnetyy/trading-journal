@@ -13,7 +13,7 @@ interface TradeFormProps {
 }
 
 const BEHAVIORAL_TAGS = [
-  { id: 'good-trade', label: 'עסקה טובה', color: '#22c55e' },
+  { id: 'good-trade', label: 'עסקה טובה', color: '#34d399' },
   { id: 'self-analysis', label: 'ניתוח עצמי', color: '#3b82f6' },
   { id: 'by-raz', label: 'לפי רז', color: '#a78bfa' },
   { id: 'by-niv', label: 'לפי ניב', color: '#fbbf24' },
@@ -41,11 +41,11 @@ const BEHAVIORAL_TAGS = [
 ];
 
 const inputStyle: React.CSSProperties = {
-  backgroundColor: '#0f172a',
-  border: '1px solid rgba(71,85,105,0.5)',
+  backgroundColor: '#0a0d14',
+  border: '1px solid rgba(148,163,184,0.2)',
   borderRadius: '8px',
   padding: '9px 12px',
-  color: '#e2e8f0',
+  color: '#dfe4ec',
   fontSize: '14px',
   outline: 'none',
   width: '100%',
@@ -55,15 +55,15 @@ const inputStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   fontSize: '12px',
-  color: '#94a3b8',
+  color: '#b6bdcc',
   marginBottom: '5px',
   display: 'block',
 };
 
 const sectionStyle: React.CSSProperties = {
-  backgroundColor: '#1e293b',
+  backgroundColor: '#111621',
   borderRadius: '12px',
-  border: '1px solid rgba(71,85,105,0.4)',
+  border: '1px solid rgba(148,163,184,0.16)',
   padding: '20px',
   marginBottom: '16px',
 };
@@ -71,7 +71,7 @@ const sectionStyle: React.CSSProperties = {
 const sectionTitle: React.CSSProperties = {
   fontSize: '15px',
   fontWeight: 600,
-  color: '#f1f5f9',
+  color: '#eef1f6',
   marginBottom: '16px',
   marginTop: 0,
 };
@@ -228,13 +228,13 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
   };
 
   return (
-    <div style={{ padding: '28px', direction: 'rtl', maxWidth: '800px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+    <div className="page" style={{ direction: 'rtl', maxWidth: '800px' }}>
+      <div className="wrap-sm" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#eef1f6', margin: 0 }}>
             {existing ? 'עריכת עסקה' : 'עסקה חדשה'}
           </h1>
-          <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
+          <p style={{ color: '#7d879a', fontSize: '14px', marginTop: '4px' }}>
             {existing ? `עסקה #${existing.serialNumber}` : 'הוספת עסקה חדשה ליומן'}
           </p>
         </div>
@@ -243,9 +243,9 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
           style={{
             padding: '8px 16px',
             borderRadius: '8px',
-            border: '1px solid rgba(71,85,105,0.5)',
+            border: '1px solid rgba(148,163,184,0.2)',
             backgroundColor: 'transparent',
-            color: '#94a3b8',
+            color: '#b6bdcc',
             cursor: 'pointer',
             fontSize: '14px',
           }}
@@ -257,10 +257,10 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
       {/* Section 1: Trade Details */}
       <div style={sectionStyle}>
         <h2 style={sectionTitle}>פרטי עסקה</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
+        <div className="rg-kpi" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px' }}>
           <div>
             <label style={labelStyle}>סוג עסקה</label>
-            <div style={{ display: 'flex', gap: '0', backgroundColor: '#0f172a', borderRadius: '8px', padding: '3px' }}>
+            <div style={{ display: 'flex', gap: '0', backgroundColor: '#0a0d14', borderRadius: '8px', padding: '3px' }}>
               {(['long', 'short'] as const).map((t) => (
                 <button
                   key={t}
@@ -279,7 +279,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                           ? '#15803d'
                           : '#b91c1c'
                         : 'transparent',
-                    color: type === t ? 'white' : '#64748b',
+                    color: type === t ? 'white' : '#7d879a',
                     transition: 'all 0.15s',
                   }}
                 >
@@ -327,7 +327,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
       {/* Section 2: Initial Entry */}
       <div style={sectionStyle}>
         <h2 style={sectionTitle}>כניסה ראשונית</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+        <div className="rg-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
           <div>
             <label style={labelStyle}>מחיר כניסה</label>
             <input
@@ -384,8 +384,8 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
             <div
               style={{
                 ...inputStyle,
-                backgroundColor: '#162032',
-                color: '#94a3b8',
+                backgroundColor: '#171d2b',
+                color: '#b6bdcc',
                 cursor: 'default',
               }}
             >
@@ -394,9 +394,9 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
           </div>
         </div>
         {risk > 0 && (
-          <div style={{ marginTop: '12px', padding: '10px', backgroundColor: 'rgba(239,68,68,0.08)', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <span style={{ color: '#94a3b8', fontSize: '13px' }}>סיכון מחושב: </span>
-            <span style={{ color: '#ef4444', fontWeight: 700 }}>{formatCurrency(risk)}</span>
+          <div style={{ marginTop: '12px', padding: '10px', backgroundColor: 'rgba(248,113,113,0.08)', borderRadius: '8px', border: '1px solid rgba(248,113,113,0.2)' }}>
+            <span style={{ color: '#b6bdcc', fontSize: '13px' }}>סיכון מחושב: </span>
+            <span style={{ color: '#f87171', fontWeight: 700 }}>{formatCurrency(risk)}</span>
           </div>
         )}
       </div>
@@ -412,7 +412,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: '#f1f5f9',
+            color: '#eef1f6',
             fontSize: '15px',
             fontWeight: 600,
             padding: 0,
@@ -425,7 +425,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
         {showReinforcements && (
           <>
             {reinforcements.map((r, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '12px', marginBottom: '12px', alignItems: 'end' }}>
+              <div key={idx} className="rg-kpi" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: '12px', marginBottom: '12px', alignItems: 'end' }}>
                 <div>
                   <label style={labelStyle}>מחיר חיזוק {idx + 1}</label>
                   <input
@@ -462,7 +462,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                 </div>
                 <div>
                   <label style={labelStyle}>סה"כ</label>
-                  <div style={{ ...inputStyle, backgroundColor: '#162032', color: '#94a3b8', cursor: 'default' }}>
+                  <div style={{ ...inputStyle, backgroundColor: '#171d2b', color: '#b6bdcc', cursor: 'default' }}>
                     {formatCurrency(r.price * r.quantity)}
                   </div>
                 </div>
@@ -471,9 +471,9 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                   style={{
                     padding: '9px',
                     borderRadius: '8px',
-                    border: '1px solid rgba(239,68,68,0.3)',
+                    border: '1px solid rgba(248,113,113,0.3)',
                     backgroundColor: 'transparent',
-                    color: '#ef4444',
+                    color: '#f87171',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -492,9 +492,9 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                   gap: '6px',
                   padding: '8px 14px',
                   borderRadius: '8px',
-                  border: '1px dashed rgba(14,165,233,0.4)',
+                  border: '1px dashed rgba(110,139,255,0.4)',
                   backgroundColor: 'transparent',
-                  color: '#0ea5e9',
+                  color: '#6e8bff',
                   cursor: 'pointer',
                   fontSize: '13px',
                 }}
@@ -503,11 +503,11 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
               </button>
             )}
             {avgEntry > 0 && reinforcements.some((r) => r.price > 0) && (
-              <div style={{ marginTop: '12px', padding: '10px', backgroundColor: 'rgba(14,165,233,0.08)', borderRadius: '8px', border: '1px solid rgba(14,165,233,0.2)' }}>
-                <span style={{ color: '#94a3b8', fontSize: '13px' }}>מחיר כניסה ממוצע מעודכן: </span>
-                <span style={{ color: '#0ea5e9', fontWeight: 700 }}>{formatCurrency(avgEntry)}</span>
-                <span style={{ color: '#94a3b8', fontSize: '13px', marginRight: '12px' }}>סה"כ מניות: </span>
-                <span style={{ color: '#0ea5e9', fontWeight: 700 }}>{totalShares.toLocaleString()}</span>
+              <div style={{ marginTop: '12px', padding: '10px', backgroundColor: 'rgba(110,139,255,0.08)', borderRadius: '8px', border: '1px solid rgba(110,139,255,0.2)' }}>
+                <span style={{ color: '#b6bdcc', fontSize: '13px' }}>מחיר כניסה ממוצע מעודכן: </span>
+                <span style={{ color: '#6e8bff', fontWeight: 700 }}>{formatCurrency(avgEntry)}</span>
+                <span style={{ color: '#b6bdcc', fontSize: '13px', marginRight: '12px' }}>סה"כ מניות: </span>
+                <span style={{ color: '#6e8bff', fontWeight: 700 }}>{totalShares.toLocaleString()}</span>
               </div>
             )}
           </>
@@ -518,18 +518,18 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
       <div style={sectionStyle}>
         <h2 style={sectionTitle}>מימושים</h2>
         {exits.map((ex, idx) => (
-          <div key={idx} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: idx < exits.length - 1 ? '1px solid rgba(71,85,105,0.3)' : 'none' }}>
+          <div key={idx} style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: idx < exits.length - 1 ? '1px solid rgba(148,163,184,0.12)' : 'none' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 500 }}>מימוש {idx + 1}</span>
+              <span style={{ color: '#b6bdcc', fontSize: '13px', fontWeight: 500 }}>מימוש {idx + 1}</span>
               {exits.length > 1 && (
                 <button
                   onClick={() => setExits((prev) => prev.filter((_, i) => i !== idx))}
                   style={{
                     padding: '4px',
                     borderRadius: '6px',
-                    border: '1px solid rgba(239,68,68,0.3)',
+                    border: '1px solid rgba(248,113,113,0.3)',
                     backgroundColor: 'transparent',
-                    color: '#ef4444',
+                    color: '#f87171',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -539,7 +539,7 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                 </button>
               )}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '12px' }}>
+            <div className="rg-kpi" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={labelStyle}>מחיר יציאה</label>
                 <input
@@ -575,8 +575,8 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                 <div
                   style={{
                     ...inputStyle,
-                    backgroundColor: '#162032',
-                    color: ex.profitLoss >= 0 ? '#22c55e' : '#ef4444',
+                    backgroundColor: '#171d2b',
+                    color: ex.profitLoss >= 0 ? '#34d399' : '#f87171',
                     cursor: 'default',
                     fontWeight: 600,
                   }}
@@ -606,9 +606,9 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
               gap: '6px',
               padding: '8px 14px',
               borderRadius: '8px',
-              border: '1px dashed rgba(34,197,94,0.4)',
+              border: '1px dashed rgba(52,211,153,0.4)',
               backgroundColor: 'transparent',
-              color: '#22c55e',
+              color: '#34d399',
               cursor: 'pointer',
               fontSize: '13px',
             }}
@@ -620,29 +620,29 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
 
       {/* Section 5: Summary */}
       {(initialEntry.price > 0 && initialEntry.quantity > 0) && (
-        <div style={{ ...sectionStyle, backgroundColor: 'rgba(30,41,59,0.5)' }}>
+        <div style={{ ...sectionStyle, backgroundColor: 'rgba(23,29,43,0.5)' }}>
           <h2 style={sectionTitle}>סיכום עסקה</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+          <div className="rg-kpi" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
             {[
-              { label: 'מחיר כניסה ממוצע', value: formatCurrency(avgEntry), color: '#e2e8f0' },
-              { label: 'סה"כ מניות', value: totalShares.toLocaleString(), color: '#e2e8f0' },
-              { label: 'סה"כ השקעה', value: formatCurrency(totalInvested), color: '#e2e8f0' },
+              { label: 'מחיר כניסה ממוצע', value: formatCurrency(avgEntry), color: '#dfe4ec' },
+              { label: 'סה"כ מניות', value: totalShares.toLocaleString(), color: '#dfe4ec' },
+              { label: 'סה"כ השקעה', value: formatCurrency(totalInvested), color: '#dfe4ec' },
               {
                 label: 'רווח/הפסד גולמי',
                 value: formatCurrency(totalPL) + ' (' + (totalPLPercent >= 0 ? '+' : '') + totalPLPercent.toFixed(1) + '%)',
-                color: totalPL >= 0 ? '#22c55e' : '#ef4444',
+                color: totalPL >= 0 ? '#34d399' : '#f87171',
               },
               { label: 'עמלות', value: formatCurrency(commissions), color: '#f59e0b' },
               {
                 label: 'רווח/הפסד נטו',
                 value: formatCurrency(netPL) + ' (' + (netPLPercent >= 0 ? '+' : '') + netPLPercent.toFixed(1) + '%)',
-                color: netPL >= 0 ? '#22c55e' : '#ef4444',
+                color: netPL >= 0 ? '#34d399' : '#f87171',
               },
               { label: 'סיכון ($)', value: formatCurrency(risk), color: '#f59e0b' },
-              { label: 'R/R שהושג', value: isFinite(rr) ? rr.toFixed(2) : '—', color: rr >= 1 ? '#22c55e' : rr >= 0 ? '#f59e0b' : '#ef4444' },
+              { label: 'R/R שהושג', value: isFinite(rr) ? rr.toFixed(2) : '—', color: rr >= 1 ? '#34d399' : rr >= 0 ? '#f59e0b' : '#f87171' },
             ].map((item, i) => (
-              <div key={i} style={{ padding: '12px', backgroundColor: '#0f172a', borderRadius: '8px' }}>
-                <div style={{ fontSize: '11px', color: '#475569', marginBottom: '4px' }}>{item.label}</div>
+              <div key={i} style={{ padding: '12px', backgroundColor: '#0a0d14', borderRadius: '8px' }}>
+                <div style={{ fontSize: '11px', color: '#565f73', marginBottom: '4px' }}>{item.label}</div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: item.color }}>{item.value}</div>
               </div>
             ))}
@@ -687,9 +687,9 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
                 style={{
                   padding: '6px 14px',
                   borderRadius: '20px',
-                  border: active ? `1px solid ${tag.color}40` : '1px solid rgba(71,85,105,0.5)',
+                  border: active ? `1px solid ${tag.color}40` : '1px solid rgba(148,163,184,0.2)',
                   backgroundColor: active ? `${tag.color}25` : 'transparent',
-                  color: active ? tag.color : '#64748b',
+                  color: active ? tag.color : '#7d879a',
                   cursor: 'pointer',
                   fontSize: '13px',
                   fontWeight: active ? 600 : 400,
@@ -734,9 +734,9 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
           style={{
             padding: '11px 24px',
             borderRadius: '8px',
-            border: '1px solid rgba(71,85,105,0.5)',
+            border: '1px solid rgba(148,163,184,0.2)',
             backgroundColor: 'transparent',
-            color: '#94a3b8',
+            color: '#b6bdcc',
             cursor: 'pointer',
             fontSize: '14px',
           }}
@@ -749,14 +749,14 @@ export default function TradeForm({ existing, nextSerial, defaultCommissionPerAc
             padding: '11px 28px',
             borderRadius: '8px',
             border: 'none',
-            backgroundColor: '#0284c7',
+            backgroundColor: '#5470f0',
             color: 'white',
             cursor: 'pointer',
             fontSize: '14px',
             fontWeight: 700,
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0ea5e9')}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#0284c7')}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#6e8bff')}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.backgroundColor = '#5470f0')}
         >
           {existing ? 'שמור שינויים' : 'הוסף עסקה'}
         </button>
